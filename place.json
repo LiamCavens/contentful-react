@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "tags": [],
+    "concepts": []
+  },
+  "sys": {
+    "space": {
+      "sys": {
+        "type": "Link",
+        "linkType": "Space",
+        "id": "7185qvjds18x"
+      }
+    },
+    "id": "1KqChvbgvLphbZHYe5ylGu",
+    "type": "Entry",
+    "createdAt": "2025-02-03T15:21:18.084Z",
+    "updatedAt": "2025-02-03T15:40:06.106Z",
+    "environment": {
+      "sys": {
+        "id": "master",
+        "type": "Link",
+        "linkType": "Environment"
+      }
+    },
+    "publishedVersion": 6,
+    "publishedAt": "2025-02-03T15:24:23.286Z",
+    "firstPublishedAt": "2025-02-03T15:22:39.451Z",
+    "createdBy": {
+      "sys": {
+        "type": "Link",
+        "linkType": "User",
+        "id": "3ffnoVWwWYIdoyligp6N4J"
+      }
+    },
+    "updatedBy": {
+      "sys": {
+        "type": "Link",
+        "linkType": "User",
+        "id": "3ffnoVWwWYIdoyligp6N4J"
+      }
+    },
+    "publishedCounter": 2,
+    "version": 9,
+    "publishedBy": {
+      "sys": {
+        "type": "Link",
+        "linkType": "User",
+        "id": "3ffnoVWwWYIdoyligp6N4J"
+      }
+    },
+    "fieldStatus": {
+      "*": {
+        "en-US": "published"
+      }
+    },
+    "automationTags": [],
+    "contentType": {
+      "sys": {
+        "type": "Link",
+        "linkType": "ContentType",
+        "id": "place"
+      }
+    },
+    "urn": "crn:contentful:::content:spaces/7185qvjds18x/environments/master/entries/1KqChvbgvLphbZHYe5ylGu"
+  },
+  "fields": {
+    "name": {
+      "en-US": "Eiffel Tower"
+    },
+    "image": {
+      "en-US": [
+        {
+          "sys": {
+            "type": "Link",
+            "linkType": "Asset",
+            "id": "Lv2rEzT8s3WUpbDxe8U9U"
+          }
+        }
+      ]
+    },
+    "location": {
+      "en-US": {
+        "lon": 2.294481,
+        "lat": 48.85837
+      }
+    },
+    "linkedVariant": {
+      "en-US": [
+        {
+          "sys": {
+            "type": "Link",
+            "linkType": "Entry",
+            "id": "2kK8V41WobtgFnVoagFbGe"
+          }
+        }
+      ]
+    }
+  }
+}
