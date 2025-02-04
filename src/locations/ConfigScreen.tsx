@@ -22,7 +22,7 @@ interface Place {
     openingHours?: { [locale: string]: string };
     linkedVariant?: any;
   };
-  image: {
+  fetchedImage: {
     file: { [locale: string]: { url: string } };
     description: { [locale: string]: string };
   } | null;
@@ -54,6 +54,11 @@ const ConfigScreen = () => {
     }
   };
 
+  const formatUrl = (url: string) => {
+    // remove https:// and www. from the URL
+    return url.replace(/(https?:\/\/)?(www\.)?/, "");
+  }
+
   useEffect(() => {
     sdk.app.onConfigure(onConfigure);
 
@@ -70,7 +75,7 @@ const ConfigScreen = () => {
 
           return {
             fields: entry.fields,
-            image,
+            fetchedImage: image,
           } as Place;
         })
       );
@@ -115,6 +120,9 @@ const ConfigScreen = () => {
                     flexDirection: "column",
                     flex: 1,
                     justifyContent: "space-between",
+                    ":last-child": {
+                      margin: "0",
+                    },
                   })}
                 >
                   <Heading>{place.fields.name[locale]}</Heading>
@@ -163,12 +171,18 @@ const ConfigScreen = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {place.fields.name[locale]} websiteUrl
+                      {formatUrl(place.fields.websiteUrl[locale])}
                     </a>
                   )}
                 </div>
                 <div
-                  className={css({ width: "50%", border: "1px solid black", display: "flex", justifyContent: "center", alignItems: "center" })}
+                  className={css({
+                    width: "50%",
+                    border: "1px solid black",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  })}
                 >
                   MAP PLACEHOLDER
                 </div>
@@ -188,10 +202,10 @@ const ConfigScreen = () => {
                 )}
               </div>
             </div>
-            {place.image && (
+            {place.fetchedImage && (
               <img
-                src={place.image.file[locale]?.url}
-                alt={place.image.description[locale]}
+                src={place.fetchedImage.file[locale]?.url}
+                alt={place.fetchedImage.description[locale]}
                 className={css({
                   width: "33%",
                   objectFit: "cover",
