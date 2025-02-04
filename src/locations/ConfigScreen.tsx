@@ -1,66 +1,3 @@
-// const ConfigScreen = () => {
-//   const [parameters, setParameters] = useState<AppInstallationParameters>({});
-//   const sdk = useSDK<ConfigAppSDK>();
-
-//   /*
-//      To use the cma, inject it as follows.
-//      If it is not needed, you can remove the next line.
-//   */
-//   // const cma = useCMA();
-
-//   const onConfigure = useCallback(async () => {
-//     // This method will be called when a user clicks on "Install"
-//     // or "Save" in the configuration screen.
-//     // for more details see https://www.contentful.com/developers/docs/extensibility/ui-extensions/sdk-reference/#register-an-app-configuration-hook
-
-//     // Get current the state of EditorInterface and other entities
-//     // related to this app installation
-//     const currentState = await sdk.app.getCurrentState();
-
-//     return {
-//       // Parameters to be persisted as the app configuration.
-//       parameters,
-//       // In case you don't want to submit any update to app
-//       // locations, you can just pass the currentState as is
-//       targetState: currentState,
-//     };
-//   }, [parameters, sdk]);
-
-//   useEffect(() => {
-//     // `onConfigure` allows to configure a callback to be
-//     // invoked when a user attempts to install the app or update
-//     // its configuration.
-//     sdk.app.onConfigure(() => onConfigure());
-//   }, [sdk, onConfigure]);
-
-//   useEffect(() => {
-//     (async () => {
-//       // Get current parameters of the app.
-//       // If the app is not installed yet, `parameters` will be `null`.
-//       const currentParameters: AppInstallationParameters | null = await sdk.app.getParameters();
-
-//       if (currentParameters) {
-//         setParameters(currentParameters);
-//       }
-
-//       // Once preparation has finished, call `setReady` to hide
-//       // the loading screen and present the app to a user.
-//       sdk.app.setReady();
-//     })();
-//   }, [sdk]);
-
-//   return (
-//     <Flex flexDirection="column" className={css({ margin: '80px', maxWidth: '800px' })}>
-//       <Form>
-//         <Heading>App Config</Heading>
-//         <Paragraph>Welcome to your contentful app. This is your config page.</Paragraph>
-//       </Form>
-//     </Flex>
-//   );
-// };
-
-// export default ConfigScreen;
-
 import { ConfigAppSDK } from "@contentful/app-sdk";
 import {
   Flex,
@@ -78,9 +15,11 @@ interface AppInstallationParameters {}
 interface Place {
   fields: {
     name: { [locale: string]: string };
-    website?: { [locale: string]: string };
+    websiteUrl?: { [locale: string]: string };
     description?: { [locale: string]: string };
     image?: { [locale: string]: { sys: { id: string } } };
+    price?: { [locale: string]: string };
+    openingHours?: { [locale: string]: string };
     linkedVariant?: any;
   };
   image: {
@@ -145,7 +84,6 @@ const ConfigScreen = () => {
 
   return (
     <Flex flexDirection="column" className={css({ margin: "80px" })}>
-      <Heading>Place Demo</Heading>
       <div
         className={css({
           display: "flex",
@@ -160,15 +98,13 @@ const ConfigScreen = () => {
               backgroundColor: "#fff",
               padding: "1rem",
               display: "flex",
-              gap: "1rem",
             })}
           >
-            <div className={css({ flex: 1 })}>
+            <div className={css({ flex: 1, marginRight: "1rem" })}>
               <div
                 className={css({
                   display: "flex",
                   flexDirection: "row",
-                  gap: "1rem",
                   flex: 1,
                   justifyContent: "space-between",
                 })}
@@ -177,12 +113,11 @@ const ConfigScreen = () => {
                   className={css({
                     display: "flex",
                     flexDirection: "column",
-                    gap: "1rem",
                     flex: 1,
                     justifyContent: "space-between",
                   })}
                 >
-                  <Paragraph>{place.fields.name[locale]}</Paragraph>
+                  <Heading>{place.fields.name[locale]}</Heading>
                   <Form
                     className={css({
                       display: "flex",
@@ -216,27 +151,36 @@ const ConfigScreen = () => {
                     </Select>
                   </Form>
                   <Paragraph>£25</Paragraph>
-                  <Paragraph>8:00 - 20:00</Paragraph>
-                  {place.fields.website && (
+                  {place.fields.price && (
+                    <Paragraph>{place.fields.price[locale]}</Paragraph>
+                  )}
+                  {place.fields.openingHours && (
+                    <Paragraph>{place.fields.openingHours[locale]}</Paragraph>
+                  )}
+                  {place.fields.websiteUrl && (
                     <a
-                      href={place.fields.website[locale]}
+                      href={place.fields.websiteUrl[locale]}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {place.fields.name[locale]} Website
+                      {place.fields.name[locale]} websiteUrl
                     </a>
                   )}
                 </div>
-                <div className={css({ width: "50%" })}>MAP PLACEHOLDER</div>
+                <div
+                  className={css({ width: "50%", border: "1px solid black", display: "flex", justifyContent: "center", alignItems: "center" })}
+                >
+                  MAP PLACEHOLDER
+                </div>
               </div>
-              <div>
-                DESCRIPTION
+              <div className={css({ display: "flex", flex: "1" })}>
                 {place.fields.description && (
                   <div
                     className={css({
                       backgroundColor: "#f0f0f0",
-                      padding: "1rem",
+                      padding: "2rem",
                       marginTop: "1rem",
+                      border: "1px solid #ccc",
                     })}
                   >
                     <Paragraph>{place.fields.description[locale]}</Paragraph>
