@@ -10,7 +10,7 @@ import {
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { css } from "emotion";
 import { useEffect, useState, useCallback } from "react";
-import PlaceVarients from "../components/PlaceVarients";
+import PlaceVarients from "../PlaceVarients";
 
 interface AppInstallationParameters {}
 
@@ -61,8 +61,7 @@ const Place = ({
   useEffect(() => {
     const fetchData = async () => {
       const getEntry = await sdk.space.getEntry(entryID);
-
-      const imageId = getEntry.fields.image?.[locale]?.sys?.id;
+      const imageId = getEntry.fields.image?.[locale][0]?.sys?.id;
       const image = imageId ? await getImageUrl(imageId) : null;
 
       const mappedPlace = {
@@ -77,7 +76,7 @@ const Place = ({
   }, [sdk, entryID]);
 
   return (
-    <Flex flexDirection="column" className={css({ margin: "80px" })}>
+    <Flex flexDirection="column" margin="none">
       <div
         className={css({
           display: "flex",
@@ -86,10 +85,9 @@ const Place = ({
         })}
       >
         {place && (
-          <Tabs.Panel
+          <div
             key={place.fields.name[locale] + "-panel"}
             id={place.fields.name[locale]}
-            className={css({ padding: "1rem" })}
           >
             <div>
               <div
@@ -132,7 +130,8 @@ const Place = ({
                           display: "flex",
                           flexDirection: "column",
                           gap: "1rem",
-                          maxWidth: "25%",
+                          maxWidth: "100%",
+                          paddingRight: "1rem",
                           marginBottom: "1rem",
                         })}
                       >
@@ -153,7 +152,6 @@ const Place = ({
                           <Select.Option>Status Dos</Select.Option>
                         </Select>
                       </Form>
-                      <Paragraph>£25</Paragraph>
                       {place.fields.price && (
                         <Paragraph>{place.fields.price[locale]}</Paragraph>
                       )}
@@ -221,7 +219,7 @@ const Place = ({
                 />
               )}
             </div>
-          </Tabs.Panel>
+          </div>
         )}
       </div>
     </Flex>

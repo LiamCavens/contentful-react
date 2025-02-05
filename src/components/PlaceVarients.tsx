@@ -78,11 +78,30 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
       <Tabs
         currentTab={currentTab}
         onTabChange={setCurrentTab}
-        className={css({ padding: "1rem" })}
+        className={css({ padding: "1rem", display: "flex" })}
       >
-        <Tabs.List variant="vertical-divider">
+        <Tabs.List className={css({ flexDirection: "column" })}>
           {variantsData.map((variant, index) => (
-            <Tabs.Tab key={variant.tag + "-tab-" + index} panelId={variant.tag}>
+            <Tabs.Tab
+              key={variant.tag + "-tab-" + index}
+              panelId={variant.tag}
+              className={css({
+                height: "2rem",
+                minHeight: "2rem",
+                position: "relative",
+                "::before": {
+                  content: '""',
+                  position: "absolute",
+                  background: "rgb(3, 111, 227)",
+                  opacity: 0,
+                  right: "0px",
+                  left: "100%",
+                  width: "2px",
+                  height: "2rem",
+                  bottom: "none",
+                },
+              })}
+            >
               {variant.tag}
             </Tabs.Tab>
           ))}
@@ -95,7 +114,9 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
             className={css({ padding: "1rem" })}
           >
             <Heading>{variant.nameOverride[locale]}</Heading>
-            <Paragraph>
+            <Paragraph
+              className={css({ padding: '1rem', border: "1px solid rgb(204, 204, 204)" })}
+            >
               {variant.description[locale].content[0].content[0].value}
             </Paragraph>
           </Tabs.Panel>
