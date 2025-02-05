@@ -1,16 +1,22 @@
 import { EditorAppSDK } from '@contentful/app-sdk';
-import { Paragraph } from '@contentful/f36-components';
-import { /* useCMA, */ useSDK } from '@contentful/react-apps-toolkit';
+import { Flex } from '@contentful/f36-components';
+import { useSDK } from '@contentful/react-apps-toolkit';
+import Place from '../components/Place';
+
+// all content Types 
+type contentType = 'place' | 'placeVariant';
 
 const Entry = () => {
   const sdk = useSDK<EditorAppSDK>();
-  /*
-     To use the cma, inject it as follows.
-     If it is not needed, you can remove the next line.
-  */
-  // const cma = useCMA();
+  const contentModelType: contentType = sdk.contentType.sys.id as contentType; // Content type will be content model id
+  const entryID = sdk.ids.entry;
+  
 
-  return <Paragraph>Hello Entry Editor Component (AppId: {sdk.ids.app})</Paragraph>;
+  return (
+    <Flex>{contentModelType === "place" && 
+      <Place entryID={entryID} sdk={sdk} />
+    }</Flex>
+  );
 };
 
 export default Entry;
