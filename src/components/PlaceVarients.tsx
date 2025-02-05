@@ -1,4 +1,4 @@
-import { ConfigAppSDK } from "@contentful/app-sdk";
+import { ConfigAppSDK, EditorAppSDK } from "@contentful/app-sdk";
 import {
   Checkbox,
   Flex,
@@ -15,7 +15,7 @@ interface PlaceVariantProps {
     sys: { id: string };
     fields: { channelTaxonomy: { sys: { id: string } } };
   }[];
-  sdk: ConfigAppSDK;
+  sdk: ConfigAppSDK | EditorAppSDK;
   locale: string;
 }
 
