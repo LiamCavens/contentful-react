@@ -158,7 +158,7 @@ const Place = ({
                 {channel}
               </Badge>
             </div>
-            <div className={css({ display: "flex", gap: "1rem" })}>
+            <div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
               <Badge variant={"positive"}>
                 {linkedVariant.sys.fieldStatus["*"][locale]}
               </Badge>
