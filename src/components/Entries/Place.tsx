@@ -5,14 +5,10 @@ import {
   Heading,
   Paragraph,
   Select,
-  Tabs,
 } from "@contentful/f36-components";
-import { useSDK } from "@contentful/react-apps-toolkit";
 import { css } from "emotion";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import PlaceVarients from "../PlaceVarients";
-
-interface AppInstallationParameters {}
 
 interface Place {
   fields: {

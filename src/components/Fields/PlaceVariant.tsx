@@ -1,67 +1,219 @@
 import { FieldAppSDK } from "@contentful/app-sdk";
 import {
-  Flex,
-  EntryCard
+  Heading,
+  Badge,
+  Card,
+  Paragraph,
+  Menu,
+  IconButton,
 } from "@contentful/f36-components";
-import { useSDK } from "@contentful/react-apps-toolkit";
+import { Image } from "@contentful/f36-image";
+import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
 import { useEffect, useState, useCallback } from "react";
-import PlaceVarients from "../PlaceVarients";
 
-interface AppInstallationParameters {}
-
-interface PlaceVariant {
-  fields: {
-    name: { [locale: string]: string };
-    websiteUrl?: { [locale: string]: string };
-    description?: { [locale: string]: string };
-    image?: { [locale: string]: { sys: { id: string } } };
-    price?: { [locale: string]: string };
-    openingHours?: { [locale: string]: string };
-    linkedVariants?: any;
+type EntityStatus = "archived" | "changed" | "draft" | "published";
+type ContentType = "linkedVariants";
+interface LinkedVariant {
+  sys: {
+    id: string;
+    fieldStatus: {
+      "*": {
+        [key: string]: EntityStatus;
+      };
+    };
   };
-  fetchedImage: {
-    file: { [locale: string]: { url: string } };
-    description: { [locale: string]: string };
-  } | null;
-  metadata: {
-    tags: { sys: { id: string }[] };
+  fields: {
+    name: {
+      [key: string]: string;
+    };
+    description: {
+      [key: string]: {
+        data: Record<string, unknown>;
+        content: Array<{
+          data: Record<string, unknown>;
+          content: Array<{
+            data: Record<string, unknown>;
+            marks: Array<{ type: string }>;
+            value: string;
+            nodeType: string;
+          }>;
+          nodeType: string;
+        }>;
+        nodeType: string;
+      };
+    };
+    image: {
+      [key: string]: {
+        sys: {
+          type: "Link";
+          linkType: "Asset";
+          id: string;
+        };
+      };
+    };
+  };
+  image?: {
+    description: { [key: string]: string };
+    file: { [key: string]: { url: string } };
+    title: { [key: string]: string };
   };
 }
 
-const Place = ({ fieldId, sdk }: { fieldId: string; sdk: FieldAppSDK }) => {
-  const [placeVarient, setPlaceVariant] = useState<PlaceVariant>();
+const Place = ({
+  linkedVariantId,
+  linkedVariantObj,
+  sdk,
+  contentType,
+  channel,
+}: {
+  linkedVariantId?: string;
+  linkedVariantObj?: LinkedVariant;
+  sdk: FieldAppSDK;
+  contentType: ContentType;
+  channel?: string;
+}) => {
+  const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
   const locale = "en-US";
 
   useEffect(() => {
     const fetchData = async () => {
-      const field = await sdk.space.getEntry(fieldId);
+      if (linkedVariantId) {
+        const getVariant = await sdk.space.getEntry(linkedVariantId);
+        const getVariantImage = getVariant.fields?.image?.[locale]?.sys.id
+          ? await getImageAsset(getVariant.fields.image[locale].sys.id)
+          : null;
 
-      console.log("Liam: field");
-      console.log(field);
+        const mappedVariant = {
+          sys: getVariant.sys,
+          fields: getVariant.fields,
+          image: getVariantImage,
+        };
 
-      const mappedPlaceVariant = {
-        fields: field.fields,
-      } as PlaceVariant;
+        setLinkedVariant(mappedVariant as unknown as LinkedVariant);
+        return;
+      }
 
-      setPlaceVariant(mappedPlaceVariant);
+      setLinkedVariant(linkedVariantObj);
     };
 
     fetchData();
-  }, [sdk, fieldId]);
+  }, [sdk, linkedVariantId]);
+
+  const getImageAsset = async (id: string) => {
+    try {
+      const imageAsset = await sdk.space.getAsset(id);
+      return imageAsset.fields;
+    } catch (error) {
+      console.error(`Error fetching image asset with ID ${id}:`, error);
+      return null;
+    }
+  };
+
+  const formatDescription = (description: any) => {
+    if (typeof description === "string") {
+      return description;
+    }
+    return description.content
+      .map((content: any) =>
+        content.content.map((content: any) => content.value).join("")
+      )
+      .join("");
+  };
+
+  const formattedContentType = contentType
+    .replace(/([A-Z])/g, " $1")
+    .trim()
+    .replace(/^./, (str) => str.toUpperCase());
 
   return (
-    <Flex flexDirection="column" margin="none">
-        {placeVarient && (
-          <EntryCard
-            status="published"
-            contentType="Author"
-            title="John Doe"
-            description="Research and recommendations for modern stack websites."
-            withDragHandle
-          />
-        )}
-    </Flex>
+    <>
+      {linkedVariant && (
+        <Card
+          className={css({
+            marginBottom: "1rem",
+            padding: "0",
+          })}
+        >
+          <div
+            className={css({
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "1rem",
+              borderBottom: "1px solid #e5e5e5",
+            })}
+          >
+            <div>
+              {formattedContentType}{" "}
+              <Badge
+                variant={
+                  channel === "Web"
+                    ? "positive"
+                    : channel === "App"
+                    ? "warning"
+                    : "negative"
+                }
+              >
+                {channel}
+              </Badge>
+            </div>
+            <div className={css({ display: "flex", gap: "1rem" })}>
+              <Badge variant={"positive"}>
+                {linkedVariant.sys.fieldStatus["*"][locale]}
+              </Badge>
+              <Menu>
+                <Menu.Trigger>
+                  <IconButton
+                    variant="secondary"
+                    icon={<MenuIcon />}
+                    aria-label="toggle menu"
+                  />
+                </Menu.Trigger>
+                <Menu.List>
+                  <Menu.Item>Remove</Menu.Item>
+                </Menu.List>
+              </Menu>
+            </div>
+          </div>
+          <div
+            className={css({
+              padding: "1rem",
+            })}
+            onClick={() => {
+              sdk.navigator.openEntry(linkedVariant.sys.id, { slideIn: true });
+            }}
+          >
+            <Heading as="h3">{linkedVariant.fields.name[locale]}</Heading>
+            <div
+              className={css({
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "1rem",
+              })}
+            >
+              <Paragraph>
+                {formatDescription(linkedVariant.fields.description[locale])}
+              </Paragraph>
+              {linkedVariant.image && linkedVariant.image.file[locale].url && (
+                <Image
+                  className={css({
+                    maxWidth: "175px",
+                  })}
+                  src={linkedVariant.image.file[locale].url}
+                  alt={linkedVariant.image.description[locale]}
+                  height="175px"
+                  width="175px"
+                />
+              )}
+            </div>
+          </div>
+        </Card>
+        // <EntryCard
+        //   withDragHandle
+        // />
+      )}
+    </>
   );
 };
 

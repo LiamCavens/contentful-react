@@ -102,7 +102,7 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
                 },
               })}
             >
-              {variant.tag}
+              {variant.nameOverride[locale]}
             </Tabs.Tab>
           ))}
         </Tabs.List>
@@ -115,7 +115,10 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
           >
             <Heading>{variant.nameOverride[locale]}</Heading>
             <Paragraph
-              className={css({ padding: '1rem', border: "1px solid rgb(204, 204, 204)" })}
+              className={css({
+                padding: "1rem",
+                border: "1px solid rgb(204, 204, 204)",
+              })}
             >
               {variant.description[locale].content[0].content[0].value}
             </Paragraph>
