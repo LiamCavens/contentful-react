@@ -171,7 +171,9 @@ const Place = ({
                   />
                 </Menu.Trigger>
                 <Menu.List>
-                  <Menu.Item>Remove</Menu.Item>
+                  <Menu.Item onClick={(e) => {
+                    e.stopPropagation()
+                    sdk.notifier.warning('Not yet added this bit');}}>Remove</Menu.Item>
                 </Menu.List>
               </Menu>
             </div>
@@ -181,6 +183,7 @@ const Place = ({
               padding: "1rem",
             })}
             onClick={() => {
+
               sdk.navigator.openEntry(linkedVariant.sys.id, { slideIn: true });
             }}
           >

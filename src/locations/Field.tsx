@@ -4,6 +4,7 @@ import { Button } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { FieldAppSDK } from "@contentful/app-sdk";
 import PlaceVariant from "../components/Fields/PlaceVariant";
+import TaxonomyEntry from "../components/Entries/TaxonomyEntry";
 import { css } from "emotion";
 
 interface Field {
@@ -50,6 +51,10 @@ const Field = () => {
     [filter]
   );
 
+  const CustomRendererTaxonomy = (props: any) => {
+    return <TaxonomyEntry entity={props.entity} />;
+  };
+
   return (
     <div>
       {fieldContentType === "linkedVariants" ? (
@@ -78,6 +83,23 @@ const Field = () => {
           <MultipleEntryReferenceEditor
             key={filter}
             renderCustomCard={CustomRendererLinkedVariants}
+            viewType="link"
+            sdk={sdk}
+            isInitiallyDisabled
+            hasCardEditActions
+            parameters={{
+              instance: {
+                showCreateEntityAction: true,
+                showLinkEntityAction: true,
+              },
+            }}
+          />
+        </>
+      ) : fieldContentType === "taxonomy" ? (
+        <>
+          <MultipleEntryReferenceEditor
+            key={filter}
+            renderCustomCard={CustomRendererTaxonomy}
             viewType="link"
             sdk={sdk}
             isInitiallyDisabled
