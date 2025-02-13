@@ -171,9 +171,10 @@ const Place = ({
                   />
                 </Menu.Trigger>
                 <Menu.List>
-                  <Menu.Item onClick={(e) => {
-                    e.stopPropagation()
-                    sdk.notifier.warning('Not yet added this bit');}}>Remove</Menu.Item>
+                    <Menu.Item onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    sdk.notifier.warning('Not yet added this bit');
+                    }}>Remove</Menu.Item>
                 </Menu.List>
               </Menu>
             </div>
