@@ -25,7 +25,8 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
 
   const getVarients = async (id: string) => {
     try {
-      const variantAssets = await sdk.space.getEntry(id);
+      const variantAssets = await sdk.cma.entry.get({ entryId: id });
+      
       return variantAssets.fields;
     } catch (error) {
       console.error(`Error fetching variant with ID ${id}:`, error);
@@ -35,7 +36,8 @@ const PlaceVariants = ({ linkedVariants, sdk, locale }: PlaceVariantProps) => {
 
   const getTaxonomyTag = async (taxonomyId: string) => {
     try {
-      const taxonomyTag = await sdk.space.getEntry(taxonomyId);
+
+      const taxonomyTag = await sdk.cma.entry.get({ entryId: taxonomyId });
       return taxonomyTag.fields.channel[locale];
     } catch (error) {
       console.error(

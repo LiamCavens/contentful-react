@@ -25,7 +25,7 @@ const TaxonomyEntry = ({
           ) || [];
 
         const childEntries = await Promise.all(
-          childIds.map((id: string) => sdk.space.getEntry(id))
+          childIds.map((entryId: string) => sdk.cma.entry.get({ entryId }))
         );
 
         setChildren(childEntries);

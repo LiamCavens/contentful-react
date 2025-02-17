@@ -2,7 +2,7 @@ import { EditorAppSDK } from "@contentful/app-sdk";
 import { Flex } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { css } from "emotion";
-import Place from "../components/Entries/Place";
+import Place from "../components/Fields/Place";
 
 // all content Types
 type contentType = "place" | "placeVariant";

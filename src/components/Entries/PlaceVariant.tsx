@@ -11,8 +11,8 @@ import { Image } from "@contentful/f36-image";
 import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
 import { useEffect, useState, useCallback } from "react";
+import { EntityStatus } from "../../ts/types/ContentfulTypes";
 
-type EntityStatus = "archived" | "changed" | "draft" | "published";
 type ContentType = "linkedVariants";
 interface LinkedVariant {
   sys: {
@@ -53,14 +53,10 @@ interface LinkedVariant {
       };
     };
   };
-  image?: {
-    description: { [key: string]: string };
-    file: { [key: string]: { url: string } };
-    title: { [key: string]: string };
-  };
+  image?: any;
 }
 
-const Place = ({
+const PlaceVariantField = ({
   linkedVariantId,
   linkedVariantObj,
   sdk,
@@ -73,28 +69,44 @@ const Place = ({
   contentType: ContentType;
   channel?: string;
 }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
+  const [fieldStatus, setFieldStatus] = useState<EntityStatus>();
   const locale = "en-US";
 
   useEffect(() => {
     const fetchData = async () => {
       if (linkedVariantId) {
-        const getVariant = await sdk.space.getEntry(linkedVariantId);
-        const getVariantImage = getVariant.fields?.image?.[locale]?.sys.id
-          ? await getImageAsset(getVariant.fields.image[locale].sys.id)
-          : null;
+        setIsLoading(true); // Start loading
+        try {
+          const variant = await sdk.cma.entry.get({ entryId: linkedVariantId });
 
-        const mappedVariant = {
-          sys: getVariant.sys,
-          fields: getVariant.fields,
-          image: getVariantImage,
-        };
+          let getVariantImage = null;
+          if (variant.fields?.image?.[locale]?.sys.id) {
+            getVariantImage = await getImageAsset(
+              variant.fields?.image?.[locale].sys.id
+            );
+          }
 
-        setLinkedVariant(mappedVariant as unknown as LinkedVariant);
+          const mappedVariant = {
+            fields: variant.fields,
+            sys: variant.sys,
+            image: getVariantImage,
+          };
+
+          setLinkedVariant(mappedVariant as unknown as LinkedVariant);
+          setFieldStatusFromLinkedVariant();
+        } catch (error) {
+          console.error("Error fetching linked variant:", error);
+        } finally {
+          setIsLoading(false); // End loading
+        }
         return;
       }
 
       setLinkedVariant(linkedVariantObj);
+      setFieldStatusFromLinkedVariant();
+      setIsLoading(false);
     };
 
     fetchData();
@@ -110,7 +122,16 @@ const Place = ({
     }
   };
 
+  const setFieldStatusFromLinkedVariant = () => {
+    if (linkedVariant) {
+      setFieldStatus(linkedVariant.sys.fieldStatus?.["*"][locale]);
+    }
+  };
+
   const formatDescription = (description: any) => {
+    if (!description) {
+      return "";
+    }
     if (typeof description === "string") {
       return description;
     }
@@ -126,9 +147,12 @@ const Place = ({
     .trim()
     .replace(/^./, (str) => str.toUpperCase());
 
+    console.log('Liam: linkedVariant');
+    console.log(linkedVariant);
+
   return (
     <>
-      {linkedVariant && (
+      {!isLoading && linkedVariant && (
         <Card
           className={css({
             marginBottom: "1rem",
@@ -158,10 +182,26 @@ const Place = ({
                 {channel}
               </Badge>
             </div>
-            <div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
-              <Badge variant={"positive"}>
-                {linkedVariant.sys.fieldStatus["*"][locale]}
-              </Badge>
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem",
+              })}
+            >
+              {fieldStatus && (
+                <Badge
+                  variant={
+                    fieldStatus === "published"
+                      ? "positive"
+                      : fieldStatus === "changed"
+                      ? "warning"
+                      : "negative"
+                  }
+                >
+                  {fieldStatus}
+                </Badge>
+              )}
               <Menu>
                 <Menu.Trigger>
                   <IconButton
@@ -171,10 +211,14 @@ const Place = ({
                   />
                 </Menu.Trigger>
                 <Menu.List>
-                    <Menu.Item onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    sdk.notifier.warning('Not yet added this bit');
-                    }}>Remove</Menu.Item>
+                  <Menu.Item
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      sdk.notifier.warning("Not yet added this bit");
+                    }}
+                  >
+                    Remove
+                  </Menu.Item>
                 </Menu.List>
               </Menu>
             </div>
@@ -183,12 +227,13 @@ const Place = ({
             className={css({
               padding: "1rem",
             })}
-            onClick={() => {
-
-              sdk.navigator.openEntry(linkedVariant.sys.id, { slideIn: true });
-            }}
+            // onClick={() => {
+            //   sdk.navigator.openEntry(linkedVariant.sys.id, {
+            //     slideIn: true,
+            //   });
+            // }}
           >
-            <Heading as="h3">{linkedVariant.fields.name[locale]}</Heading>
+            <Heading as="h3">{linkedVariant.fields?.name?.[locale]}</Heading>
             <div
               className={css({
                 display: "flex",
@@ -196,10 +241,19 @@ const Place = ({
                 gap: "1rem",
               })}
             >
-              <Paragraph>
-                {formatDescription(linkedVariant.fields.description[locale])}
+              {" "}
+              <Paragraph
+                onClick={async () => {
+                  await sdk.navigator.openBulkEditor(linkedVariant.sys.id, {
+                    fieldId: "description",
+                    locale: "en-US",
+                    index: 0,
+                  });
+                }}
+              >
+                {formatDescription(linkedVariant.fields?.description?.[locale])}
               </Paragraph>
-              {linkedVariant.image && linkedVariant.image.file[locale].url && (
+              {linkedVariant?.image && linkedVariant.image.file[locale].url && (
                 <Image
                   className={css({
                     maxWidth: "175px",
@@ -221,4 +275,4 @@ const Place = ({
   );
 };
 
-export default Place;
+export default PlaceVariantField;

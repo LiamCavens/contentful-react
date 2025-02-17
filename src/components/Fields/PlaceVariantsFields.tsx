@@ -1,10 +1,10 @@
 import { FieldAppSDK } from "@contentful/app-sdk";
-import { Flex, Badge, EntryCard } from "@contentful/f36-components";
+import { Flex } from "@contentful/f36-components";
 import { css } from "emotion";
-import { useEffect, useState, useCallback } from "react";
-import PlaceVariant from "./PlaceVariant";
+import { useEffect, useState } from "react";
+import PlaceVariant from "../Entries/PlaceVariant";
+import { EntityStatus } from "../../ts/types/ContentfulTypes";
 
-type EntityStatus = "archived" | "changed" | "draft" | "published";
 type ContentType = "linkedVariants";
 interface LinkedVariant {
   sys: {
@@ -61,8 +61,10 @@ const PlaceVarientsFields = ({
   useEffect(() => {
     const fetchData = async () => {
       const fields = await Promise.all(
-        fieldIds.map(async (id) => {
-          return (await sdk.space.getEntry(id)) as unknown as LinkedVariant;
+        fieldIds.map(async (entryId) => {
+          return sdk.cma.entry.get({
+            entryId,
+          }) as unknown as LinkedVariant;
         })
       );
 
