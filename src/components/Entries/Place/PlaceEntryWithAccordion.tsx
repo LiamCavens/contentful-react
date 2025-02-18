@@ -5,21 +5,23 @@ import {
   Badge,
   Button,
 } from "@contentful/f36-components";
-import {
-  SettingsIcon
-} from "@contentful/f36-icons";
+import { SettingsIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
 import { useEffect, useState } from "react";
-import { camelCaseToCapitalizedWords } from "../../ts/utilities/formatStrings";
+import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
+import PlaceEntry from "./PlaceEntry";
+import getBGColor from "../../../ts/utilities/getBGColor";
 
 interface PlaceEntryProps {
   entryId: string;
   sdk: FieldAppSDK;
+  showImages?: boolean;
 }
 
 const PlaceEntryWithAccordion = ({
   entryId,
   sdk,
+  showImages,
 }: PlaceEntryProps) => {
   const [place, setPlace] = useState<any>();
   const locale = "en-US";
@@ -34,7 +36,9 @@ const PlaceEntryWithAccordion = ({
 
   if (!place) return null;
 
-  return (
+  const hasChildren = place.fields?.linkedItems?.[locale]?.length > 0;
+
+  return hasChildren ? (
     <Accordion>
       <AccordionItem
         title={
@@ -71,12 +75,6 @@ const PlaceEntryWithAccordion = ({
                     {place.sys.fieldStatus["*"][locale]}
                   </Badge>
                 )}
-                {/* <IconButton
-                  variant="secondary"
-                  icon={<MenuIcon />}
-                  aria-label="toggle menu"
-                  onClick={() => sdk.notifier.warning("Not yet added this bit")}
-                /> */}
                 <Button
                   startIcon={<SettingsIcon variant="muted" />}
                   size="small"
@@ -96,19 +94,26 @@ const PlaceEntryWithAccordion = ({
         }
         className={css({ border: "2px solid #CFD9E0" })}
       >
-        {place.fields?.linkedItems?.[locale]?.length > 0 && (
-          <div className={css({ display: "flex", flexDirection: "column", gap: '0.5rem' })}>
-            {place.fields.linkedItems[locale].map((item: any) => (
-              <PlaceEntryWithAccordion
-                key={item.sys.id}
-                entryId={item.sys.id}
-                sdk={sdk}
-              />
-            ))}
-          </div>
-        )}
+        <div
+          className={css({
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+          })}
+        >
+          {place.fields.linkedItems[locale].map((item: any) => (
+            <PlaceEntryWithAccordion
+              key={item.sys.id}
+              entryId={item.sys.id}
+              sdk={sdk}
+              showImages={showImages}
+            />
+          ))}
+        </div>
       </AccordionItem>
     </Accordion>
+  ) : (
+    <PlaceEntry entryId={entryId} sdk={sdk} showImages={showImages} />
   );
 };
 

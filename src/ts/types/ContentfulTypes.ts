@@ -1,4 +1,5 @@
 export type EntityStatus = "archived" | "changed" | "draft" | "published";
+export type ContentfulContentModelTypes = "place" | "poi";
 
 export interface LinkedVariant {
   sys: {

@@ -3,7 +3,7 @@ import { MultipleEntryReferenceEditor } from "@contentful/field-editor-reference
 import { Button, ToggleButton } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { FieldAppSDK } from "@contentful/app-sdk";
-import PlaceEntryWithAccordion from "../components/Entries/PlaceEntryWithAccordion";
+import PlaceEntryWithAccordion from "../components/Entries/Place/PlaceEntryWithAccordion";
 import PlaceVariant from "../components/Entries/PlaceVariant";
 import TaxonomyEntry from "../components/Entries/TaxonomyEntry";
 import { css } from "emotion";
@@ -88,11 +88,13 @@ const fieldRenderers = {
       </>
     );
   },
+  // Pretty much redundant, but here for completeness
   taxonomy: (
     sdk: FieldAppSDK,
     _: string,
     __: (val: string) => void,
-    showCustomRendering: boolean
+    showCustomRendering: boolean,
+    showImages?: boolean
   ) => {
     const CustomRenderer = (props: any) => {
       if (!showCustomRendering) {
@@ -133,12 +135,19 @@ const fieldRenderers = {
       const contentType = props.contentType.sys.id;
       if (contentType === "place") {
         return (
-          <PlaceEntryWithAccordion entryId={props.entity.sys.id} sdk={sdk} />
+          <PlaceEntryWithAccordion
+            entryId={props.entity.sys.id}
+            sdk={sdk}
+
+          />
         );
       }
       if (contentType === "poi") {
         return (
-          <PlaceEntryWithAccordion entryId={props.entity.sys.id} sdk={sdk} />
+          <PlaceEntryWithAccordion
+            entryId={props.entity.sys.id}
+            sdk={sdk}
+          />
         );
       }
 
@@ -150,18 +159,18 @@ const fieldRenderers = {
     };
     return (
       <MultipleEntryReferenceEditor
-        key={showCustomRendering ? "show" : "hide"}
-        renderCustomCard={CustomRenderer}
-        viewType="link"
-        sdk={sdk}
-        isInitiallyDisabled
-        hasCardEditActions
-        parameters={{
-          instance: {
-            showCreateEntityAction: true,
-            showLinkEntityAction: true,
-          },
-        }}
+      key={`${showCustomRendering}`}
+      renderCustomCard={CustomRenderer}
+      viewType="link"
+      sdk={sdk}
+      isInitiallyDisabled
+      hasCardEditActions
+      parameters={{
+        instance: {
+        showCreateEntityAction: true,
+        showLinkEntityAction: true,
+        },
+      }}
       />
     );
   },
@@ -180,7 +189,7 @@ const Field = () => {
   return (
     <div>
       <ToggleButton
-        className={css({ marginBottom: "0.5rem" })}
+        className={css({ marginBottom: "0.5rem", marginRight: "0.5rem" })}
         isActive={showCustomRendering}
         onToggle={() => setShowCustomRendering(!showCustomRendering)}
       >

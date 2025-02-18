@@ -9,11 +9,16 @@ import {
   IconButton,
 } from "@contentful/f36-components";
 import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
+// Currently commented out as it can be added back in later
 import { Image } from "@contentful/f36-image";
 import { css } from "emotion";
 import { useEffect, useState } from "react";
-import { EntityStatus } from "../../ts/types/ContentfulTypes";
-import { camelCaseToCapitalizedWords } from "../../ts/utilities/formatStrings";
+import {
+  EntityStatus,
+  ContentfulContentModelTypes,
+} from "../../../ts/types/ContentfulTypes";
+import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
+import getBGColor from "../../../ts/utilities/getBGColor";
 
 interface PlaceEntry {
   fields: {
@@ -28,7 +33,7 @@ interface PlaceEntry {
   sys: {
     id: string;
     fieldStatus: { "*": { [locale: string]: EntityStatus } };
-    contentType: { sys: { id: string } };
+    contentType: { sys: { id: ContentfulContentModelTypes } };
   };
   image: {
     file: { [locale: string]: { url: string } };
@@ -43,10 +48,12 @@ interface PlaceEntry {
 const PlaceEntry = ({
   entryId,
   sdk,
+  showImages,
   depth = 0,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
+  showImages?: boolean;
   depth?: number;
 }) => {
   const [place, setPlace] = useState<PlaceEntry>();
@@ -128,10 +135,18 @@ const PlaceEntry = ({
                 alignItems: "center",
                 padding: "1rem",
                 borderBottom: "1px solid #e5e5e5",
+                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id),
               })}
             >
               <div>
-                {camelCaseToCapitalizedWords(place?.sys?.contentType?.sys?.id)}
+                <Heading
+                  className={css({
+                    margin: 0,
+                  })}
+                  as="h3"
+                >{`${camelCaseToCapitalizedWords(
+                  place?.sys?.contentType?.sys?.id
+                )} -  ${place.fields?.name?.[locale]}`}</Heading>
               </div>
               <div
                 className={css({
@@ -193,38 +208,46 @@ const PlaceEntry = ({
                 })}
               >
                 <div>
-                  <Heading as="h3">{place.fields?.name?.[locale]}</Heading>
-                  <Paragraph >
+                  <Paragraph>
                     {formatDescription(place.fields?.description?.[locale])}
                   </Paragraph>
                 </div>
-                {/* {place?.image && place.image.file?.[locale].url && (
-                  <Image
-                    className={css({
-                      maxWidth: "100px",
-                    })}
-                    src={place.image.file[locale].url}
-                    alt={place.image.description[locale]}
-                    height="100px"
-                    width="100px"
-                  />
-                )} */}
+                {place?.image &&
+                  place.image.file?.[locale].url &&
+                  showImages && (
+                    <Image
+                      className={css({
+                        maxWidth: "100px",
+                      })}
+                      src={place.image.file[locale].url}
+                      alt={place.image.description[locale]}
+                      height="100px"
+                      width="100px"
+                    />
+                  )}
               </div>
             </div>
-            {place?.linkedItems && place.linkedItems.length > 0 && depth === 0 && (
-              <div
-                className={css({
-                  padding: "1rem",
-                  borderTop: "1px solid #e5e5e5",
-                })}
-              >
-                <ul>
-                  {place.linkedItems.map((itemId) => (
-                    <PlaceEntry key={itemId} entryId={itemId} sdk={sdk} depth={depth + 1} />
-                  ))}
-                </ul>
-              </div>
-            )}
+            {place?.linkedItems &&
+              place.linkedItems.length > 0 &&
+              depth === 0 && (
+                <div
+                  className={css({
+                    padding: "1rem",
+                    borderTop: "1px solid #e5e5e5",
+                  })}
+                >
+                  <ul>
+                    {place.linkedItems.map((itemId) => (
+                      <PlaceEntry
+                        key={itemId}
+                        entryId={itemId}
+                        sdk={sdk}
+                        depth={depth + 1}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              )}
           </Card>
         )}
       </div>

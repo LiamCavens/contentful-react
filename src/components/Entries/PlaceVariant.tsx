@@ -61,13 +61,14 @@ const PlaceVariantField = ({
   linkedVariantObj,
   sdk,
   contentType,
-  channel,
+  channel
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
   sdk: FieldAppSDK;
   contentType: ContentType;
   channel?: string;
+  showImages?: boolean;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -247,23 +248,24 @@ const PlaceVariantField = ({
                   await sdk.navigator.openBulkEditor(linkedVariant.sys.id, {
                     fieldId: "description",
                     locale: "en-US",
-                    index: 0,
+                    index: 1,
                   });
                 }}
               >
                 {formatDescription(linkedVariant.fields?.description?.[locale])}
               </Paragraph>
-              {linkedVariant?.image && linkedVariant.image.file[locale].url && (
-                <Image
-                  className={css({
-                    maxWidth: "175px",
-                  })}
-                  src={linkedVariant.image.file[locale].url}
-                  alt={linkedVariant.image.description[locale]}
-                  height="175px"
-                  width="175px"
-                />
-              )}
+              {linkedVariant?.image &&
+                linkedVariant.image.file[locale].url && (
+                  <Image
+                    className={css({
+                      maxWidth: "175px",
+                    })}
+                    src={linkedVariant.image.file[locale].url}
+                    alt={linkedVariant.image.description[locale]}
+                    height="175px"
+                    width="175px"
+                  />
+                )}
             </div>
           </div>
         </Card>
