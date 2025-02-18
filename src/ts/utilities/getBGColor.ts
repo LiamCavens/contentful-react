@@ -3,9 +3,9 @@ import { ContentfulContentModelTypes } from "../types/ContentfulTypes";
 export default function getBGColor(contentType: ContentfulContentModelTypes): string {
   switch (contentType) {
     case 'place':
-      return '#FFCCCC';
+      return "#FFFFFF";
     case 'poi':
-      return '#90EE90';
+      return '#E6FFE6';
     default:
       return '#FFFFFF'; // Default hex code
   }
