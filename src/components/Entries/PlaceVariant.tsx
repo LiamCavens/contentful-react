@@ -61,7 +61,7 @@ const PlaceVariantField = ({
   linkedVariantObj,
   sdk,
   contentType,
-  channel
+  channel,
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
@@ -148,8 +148,8 @@ const PlaceVariantField = ({
     .trim()
     .replace(/^./, (str) => str.toUpperCase());
 
-    console.log('Liam: linkedVariant');
-    console.log(linkedVariant);
+  console.log("Liam: linkedVariant");
+  console.log(linkedVariant);
 
   return (
     <>
@@ -228,11 +228,11 @@ const PlaceVariantField = ({
             className={css({
               padding: "1rem",
             })}
-            // onClick={() => {
-            //   sdk.navigator.openEntry(linkedVariant.sys.id, {
-            //     slideIn: true,
-            //   });
-            // }}
+            onClick={() => {
+              sdk.navigator.openEntry(linkedVariant.sys.id, {
+                slideIn: true,
+              });
+            }}
           >
             <Heading as="h3">{linkedVariant.fields?.name?.[locale]}</Heading>
             <div
@@ -243,29 +243,20 @@ const PlaceVariantField = ({
               })}
             >
               {" "}
-              <Paragraph
-                onClick={async () => {
-                  await sdk.navigator.openBulkEditor(linkedVariant.sys.id, {
-                    fieldId: "description",
-                    locale: "en-US",
-                    index: 1,
-                  });
-                }}
-              >
+              <Paragraph>
                 {formatDescription(linkedVariant.fields?.description?.[locale])}
               </Paragraph>
-              {linkedVariant?.image &&
-                linkedVariant.image.file[locale].url && (
-                  <Image
-                    className={css({
-                      maxWidth: "175px",
-                    })}
-                    src={linkedVariant.image.file[locale].url}
-                    alt={linkedVariant.image.description[locale]}
-                    height="175px"
-                    width="175px"
-                  />
-                )}
+              {linkedVariant?.image && linkedVariant.image.file[locale].url && (
+                <Image
+                  className={css({
+                    maxWidth: "175px",
+                  })}
+                  src={linkedVariant.image.file[locale].url}
+                  alt={linkedVariant.image.description[locale]}
+                  height="175px"
+                  width="175px"
+                />
+              )}
             </div>
           </div>
         </Card>

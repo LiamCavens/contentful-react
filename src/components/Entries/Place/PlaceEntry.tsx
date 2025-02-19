@@ -135,7 +135,7 @@ const PlaceEntry = ({
                 alignItems: "center",
                 padding: "1rem",
                 borderBottom: "1px solid #e5e5e5",
-                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id),
+                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id)
               })}
             >
               <div>

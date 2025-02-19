@@ -5,7 +5,7 @@ export default function getBGColor(contentType: ContentfulContentModelTypes): st
     case 'place':
       return "#FFFFFF";
     case 'poi':
-      return '#E6FFE6';
+      return "#98cbff";
     default:
       return '#FFFFFF'; // Default hex code
   }

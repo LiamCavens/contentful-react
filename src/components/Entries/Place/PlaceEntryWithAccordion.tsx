@@ -4,10 +4,12 @@ import {
   AccordionItem,
   Badge,
   Button,
+  Paragraph,
   Pagination,
 } from "@contentful/f36-components";
 import { SettingsIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
+import { ContentfulContentModelTypes } from "../../../ts/types/ContentfulTypes";
 import { useEffect, useState } from "react";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import PlaceEntry from "./PlaceEntry";
@@ -55,8 +57,10 @@ const PlaceEntryWithAccordion = ({
     currentPage,
     currentPage + itemsPerPage
   );
+  const entryType: ContentfulContentModelTypes =
+    place.sys?.contentType?.sys?.id;
 
-  return hasChildren ? (
+  return entryType === "place" ? (
     <Accordion>
       <AccordionItem
         title={
@@ -68,9 +72,24 @@ const PlaceEntryWithAccordion = ({
               alignItems: "center",
             })}
           >
-            <div>
-              {camelCaseToCapitalizedWords(place.sys?.contentType?.sys?.id)} -{" "}
-              {place.fields?.name?.[locale]}
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+              })}
+            >
+              <div>
+                {camelCaseToCapitalizedWords(place.sys?.contentType?.sys?.id)} -{" "}
+                {place.fields?.name?.[locale]}
+              </div>
+              <Badge
+                className={css({
+                  marginLeft: "0.5rem",
+                })}
+                variant="secondary"
+              >
+                {linkedItems.length} Children
+              </Badge>
             </div>
             <div
               className={css({
@@ -108,22 +127,26 @@ const PlaceEntryWithAccordion = ({
         }
         className={css({ border: "2px solid #CFD9E0" })}
       >
-        <div
-          className={css({
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.5rem",
-          })}
-        >
-          {paginatedItems.map((item: any) => (
-            <PlaceEntryWithAccordion
-              key={item.sys.id}
-              entryId={item.sys.id}
-              sdk={sdk}
-              showImages={showImages}
-            />
-          ))}
-        </div>
+        {hasChildren ? (
+          <div
+            className={css({
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem",
+            })}
+          >
+            {paginatedItems.map((item: any) => (
+              <PlaceEntryWithAccordion
+                key={item.sys.id}
+                entryId={item.sys.id}
+                sdk={sdk}
+                showImages={showImages}
+              />
+            ))}
+          </div>
+        ) : (
+          <Paragraph fontSize="fontSizeL">No linked Items</Paragraph>
+        )}
 
         {linkedItems.length > itemsPerPage && (
           <Pagination
