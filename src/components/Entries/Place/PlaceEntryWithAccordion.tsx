@@ -25,6 +25,7 @@ interface PlaceEntryProps {
   showImages?: boolean;
   parentId: string;
   field: string;
+  masterParentId?: string;
 }
 
 const PlaceEntryWithAccordion = ({
@@ -32,6 +33,7 @@ const PlaceEntryWithAccordion = ({
   sdk,
   showImages,
   parentId,
+  masterParentId,
   field
 }: PlaceEntryProps) => {
   const [place, setPlace] = useState<any>();
@@ -48,6 +50,14 @@ const PlaceEntryWithAccordion = ({
       const entry = await sdk.cma.entry.get({ entryId });
       setPlace(entry);
       const items = entry.fields?.linkedItems?.[locale] || [];
+
+      // if item in items sys.id === 'poi' then put it at end of array else keep it in place
+      items.sort((a: any, b: any) => {
+        if (a.sys.id === "poi") return 1;
+        if (b.sys.id === "poi") return -1;
+        return 0;
+      });
+
       setLinkedItems(items);
     };
 
@@ -172,10 +182,10 @@ const PlaceEntryWithAccordion = ({
         {hasChildren ? (
           <div
             className={css({
-              marginTop: "1rem",
+              marginTop: "0.5rem",
               display: "flex",
               flexDirection: "column",
-              gap: "0.5rem",
+              gap: "1rem",
             })}
           >
             {paginatedItems.map((item: any) => (

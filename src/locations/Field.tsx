@@ -16,12 +16,21 @@ type placeVariantTypes =
 type poiVariantTypes = "poiVariantApp" | "poiVariantWeb" | "poiVariantPrint";
 
 // Define available field content types and their renderers
-const fieldRenderers = {
+const fieldRenderers: {
+  [key: string]: (
+    sdk: FieldAppSDK,
+    filter: string,
+    setFilter: (val: string) => void,
+    showCustomRendering: boolean,
+    masterParentId: string
+  ) => JSX.Element;
+} = {
   linkedVariants: (
     sdk: FieldAppSDK,
     filter: string,
     setFilter: (val: string) => void,
-    showCustomRendering: boolean
+    showCustomRendering: boolean,
+    masterParentId: string
   ) => {
     const channels = ["App", "Web", "Print"];
     const placeVariants = [
@@ -57,6 +66,7 @@ const fieldRenderers = {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
+              masterParentId={masterParentId}
             />
           );
         } else if (poiVariants.includes(variantType)) {
@@ -67,6 +77,7 @@ const fieldRenderers = {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
+              masterParentId={masterParentId}
             />
           );
         } else {
@@ -122,13 +133,77 @@ const fieldRenderers = {
       </>
     );
   },
+  linkedItems: (
+    sdk: FieldAppSDK,
+    _: string,
+    __: (val: string) => void,
+    showCustomRendering: boolean,
+    masterParentId: string
+  ) => {
+    const CustomRenderer = (props: any) => {
+      if (!showCustomRendering) {
+        return false;
+      }
+      // return a component if it is a linkedItemType or fetch the linkedItem and return a component
+      const contentType = props.contentType.sys.id;
+      if (contentType === "place") {
+        return (
+          <PlaceEntryWithAccordion
+            entryId={props.entity.sys.id}
+            sdk={sdk}
+            field="linkedItems"
+            parentId={sdk.ids.entry}
+            masterParentId={masterParentId}
+          />
+        );
+      }
+      if (contentType === "poi") {
+        return (
+          <PlaceEntryWithAccordion
+            entryId={props.entity.sys.id}
+            sdk={sdk}
+            field="linkedItems"
+            parentId={sdk.ids.entry}
+            masterParentId={masterParentId}
+          />
+        );
+      }
+
+      return (
+        <div>
+          <p> To Do Content Type in Field : {props.entity.sys.id}</p>
+        </div>
+      );
+    };
+    return (
+      <MultipleEntryReferenceEditor
+      key={`${showCustomRendering}`}
+      renderCustomCard={CustomRenderer}
+      viewType="link"
+      sdk={sdk}
+      isInitiallyDisabled
+      hasCardEditActions
+      parameters={{
+        instance: {
+        showCreateEntityAction: true,
+        showLinkEntityAction: true,
+        },
+      }}
+      onSortingEnd={({ oldIndex, newIndex }) => {
+        const items = Array.from(sdk.field.getValue());
+        const [movedItem] = items.splice(oldIndex, 1);
+        items.splice(newIndex, 0, movedItem);
+        sdk.field.setValue(items);
+      }}
+      />
+    );
+  },
   // Pretty much redundant, but here for completeness
   taxonomy: (
     sdk: FieldAppSDK,
     _: string,
     __: (val: string) => void,
     showCustomRendering: boolean,
-    showImages?: boolean
   ) => {
     const CustomRenderer = (props: any) => {
       if (!showCustomRendering) {
@@ -153,64 +228,6 @@ const fieldRenderers = {
       />
     );
   },
-  linkedItems: (
-    sdk: FieldAppSDK,
-    _: string,
-    __: (val: string) => void,
-    showCustomRendering: boolean
-  ) => {
-    // These types are of the linkedItemTypes
-    type linkedItemTypes = "place" | "poi" | "poiAssembly";
-    const CustomRenderer = (props: any) => {
-      if (!showCustomRendering) {
-        return false;
-      }
-      // return a component if it is a linkedItemType or fetch the linkedItem and return a component
-      const contentType = props.contentType.sys.id;
-      if (contentType === "place") {
-        return (
-          <PlaceEntryWithAccordion
-            entryId={props.entity.sys.id}
-            sdk={sdk}
-            field="linkedItems"
-            parentId={sdk.ids.entry}
-          />
-        );
-      }
-      if (contentType === "poi") {
-        return (
-          <PlaceEntryWithAccordion
-            entryId={props.entity.sys.id}
-            sdk={sdk}
-            field="linkedItems"
-            parentId={sdk.ids.entry}
-          />
-        );
-      }
-
-      return (
-        <div>
-          <p> To Do Content Type in Field : {props.entity.sys.id}</p>
-        </div>
-      );
-    };
-    return (
-      <MultipleEntryReferenceEditor
-        key={`${showCustomRendering}`}
-        renderCustomCard={CustomRenderer}
-        viewType="link"
-        sdk={sdk}
-        isInitiallyDisabled
-        hasCardEditActions
-        parameters={{
-          instance: {
-            showCreateEntityAction: true,
-            showLinkEntityAction: true,
-          },
-        }}
-      />
-    );
-  },
 };
 
 const Field = () => {
@@ -218,6 +235,7 @@ const Field = () => {
   const fieldContentType = sdk.field.id as keyof typeof fieldRenderers;
   const [filter, setFilter] = useState<string>("all");
   const [showCustomRendering, setShowCustomRendering] = useState(true);
+  const masterParentId = sdk.ids.entry;
 
   useEffect(() => {
     sdk.window.startAutoResizer();
@@ -237,7 +255,8 @@ const Field = () => {
           sdk,
           filter,
           setFilter,
-          showCustomRendering
+          showCustomRendering,
+          masterParentId
         )
       ) : (
         <p className={css({ padding: "1rem" })}>

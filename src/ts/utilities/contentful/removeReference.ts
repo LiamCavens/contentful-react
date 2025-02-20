@@ -20,17 +20,21 @@ export const removeReference = async (
   sdk: FieldAppSDK,
   parentId: string,
   fieldKey: string,
-  linkedReferenceId: string
+  linkedReferenceId: string,
+  masterParentId?: string
 ) => {
   try {
     // Fetch the parent entry
     const parentEntry = await sdk.cma.entry.get({ entryId: parentId });
 
     // Ensure the field exists and is an array
-    const existingReferences: Reference[] = parentEntry.fields[fieldKey]?.["en-US"] || [];
+    const existingReferences: Reference[] =
+      parentEntry.fields[fieldKey]?.["en-US"] || [];
 
     // Find the index of the last occurrence of the reference to remove
-    const lastIndex = existingReferences.map(ref => ref.sys.id).lastIndexOf(linkedReferenceId);
+    const lastIndex = existingReferences
+      .map((ref) => ref.sys.id)
+      .lastIndexOf(linkedReferenceId);
 
     // If the reference is found, remove it
     if (lastIndex !== -1) {
@@ -45,5 +49,16 @@ export const removeReference = async (
   } catch (error) {
     console.error("Error removing linked reference:", error);
     sdk.notifier.error("Failed to remove reference.");
+  } finally {
+    // We do this so if any children are updated, it refresehs most parent entry
+    if (masterParentId) {
+      const parentEntryMaster = await sdk.cma.entry.get({
+        entryId: masterParentId,
+      });
+      await sdk.cma.entry.update(
+        { entryId: masterParentId },
+        parentEntryMaster
+      );
+    }
   }
 };

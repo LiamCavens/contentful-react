@@ -126,7 +126,6 @@ const PlaceEntry = ({
         {place && (
           <Card
             className={css({
-              marginBottom: "1rem",
               padding: "0",
             })}
           >
