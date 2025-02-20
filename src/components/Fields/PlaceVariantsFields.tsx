@@ -2,7 +2,7 @@ import { FieldAppSDK } from "@contentful/app-sdk";
 import { Flex } from "@contentful/f36-components";
 import { css } from "emotion";
 import { useEffect, useState } from "react";
-import PlaceVariant from "../Entries/PlaceVariant";
+import PoiVariant from "../Entries/Poi/PoiVariant";
 import { EntityStatus } from "../../ts/types/ContentfulTypes";
 
 type ContentType = "linkedVariants";
@@ -81,7 +81,7 @@ const PlaceVarientsFields = ({
     >
       {linkedVariants &&
         linkedVariants.map((variant: LinkedVariant, index: number) => (
-          <PlaceVariant
+          <PoiVariant
             key={"placeVariant-" + index}
             linkedVariantObj={variant}
             sdk={sdk}

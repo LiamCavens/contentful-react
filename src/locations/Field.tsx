@@ -4,9 +4,16 @@ import { Button, ToggleButton } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { FieldAppSDK } from "@contentful/app-sdk";
 import PlaceEntryWithAccordion from "../components/Entries/Place/PlaceEntryWithAccordion";
-import PlaceVariant from "../components/Entries/PlaceVariant";
+import PoiVariant from "../components/Entries/Poi/PoiVariant";
+import PlaceVariant from "../components/Entries/Place/PlaceVariant";
 import TaxonomyEntry from "../components/Entries/TaxonomyEntry";
 import { css } from "emotion";
+
+type placeVariantTypes =
+  | "placeVariantApp"
+  | "placeVariantWeb"
+  | "placeVariantPrint";
+type poiVariantTypes = "poiVariantApp" | "poiVariantWeb" | "poiVariantPrint";
 
 // Define available field content types and their renderers
 const fieldRenderers = {
@@ -17,13 +24,21 @@ const fieldRenderers = {
     showCustomRendering: boolean
   ) => {
     const channels = ["App", "Web", "Print"];
+    const placeVariants = [
+      "placeVariantApp",
+      "placeVariantWeb",
+      "placeVariantPrint",
+    ];
+    const poiVariants = ["poiVariantApp", "poiVariantWeb", "poiVariantPrint"];
     const CustomRenderer = useCallback(
       (props: any) => {
+        const variantType = props.contentType.sys.id as
+          | placeVariantTypes
+          | poiVariantTypes;
         const linkedVariantChannel =
           channels.find((channel) =>
-            new RegExp(`${channel}$`).test(props.contentType.name)
-          ) || props.contentType.name;
-
+            new RegExp(`${channel}$`).test(variantType)
+          ) || variantType;
 
         if (!showCustomRendering) {
           return false;
@@ -34,14 +49,33 @@ const fieldRenderers = {
           return <></>;
         }
 
-        return (
-          <PlaceVariant
-            linkedVariantId={props.entity.sys.id}
-            sdk={sdk}
-            contentType="linkedVariants"
-            channel={linkedVariantChannel}
-          />
-        );
+        if (placeVariants.includes(variantType)) {
+          return (
+            <PlaceVariant
+              linkedVariantId={props.entity.sys.id}
+              parentId={sdk.ids.entry}
+              sdk={sdk}
+              contentType="linkedVariants"
+              channel={linkedVariantChannel}
+            />
+          );
+        } else if (poiVariants.includes(variantType)) {
+          return (
+            <PoiVariant
+              linkedVariantId={props.entity.sys.id}
+              parentId={sdk.ids.entry}
+              sdk={sdk}
+              contentType="linkedVariants"
+              channel={linkedVariantChannel}
+            />
+          );
+        } else {
+          return (
+            <div>
+              <p> To Do Content Type in Field : {variantType}</p>
+            </div>
+          );
+        }
       },
       [filter, showCustomRendering]
     );
@@ -138,7 +172,8 @@ const fieldRenderers = {
           <PlaceEntryWithAccordion
             entryId={props.entity.sys.id}
             sdk={sdk}
-
+            field="linkedItems"
+            parentId={sdk.ids.entry}
           />
         );
       }
@@ -147,6 +182,8 @@ const fieldRenderers = {
           <PlaceEntryWithAccordion
             entryId={props.entity.sys.id}
             sdk={sdk}
+            field="linkedItems"
+            parentId={sdk.ids.entry}
           />
         );
       }
@@ -159,18 +196,18 @@ const fieldRenderers = {
     };
     return (
       <MultipleEntryReferenceEditor
-      key={`${showCustomRendering}`}
-      renderCustomCard={CustomRenderer}
-      viewType="link"
-      sdk={sdk}
-      isInitiallyDisabled
-      hasCardEditActions
-      parameters={{
-        instance: {
-        showCreateEntityAction: true,
-        showLinkEntityAction: true,
-        },
-      }}
+        key={`${showCustomRendering}`}
+        renderCustomCard={CustomRenderer}
+        viewType="link"
+        sdk={sdk}
+        isInitiallyDisabled
+        hasCardEditActions
+        parameters={{
+          instance: {
+            showCreateEntityAction: true,
+            showLinkEntityAction: true,
+          },
+        }}
       />
     );
   },

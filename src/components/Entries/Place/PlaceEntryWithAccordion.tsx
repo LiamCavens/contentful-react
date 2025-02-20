@@ -4,8 +4,11 @@ import {
   AccordionItem,
   Badge,
   Button,
+  Heading,
+  ModalConfirm,
   Paragraph,
   Pagination,
+  Text,
 } from "@contentful/f36-components";
 import { SettingsIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
@@ -13,22 +16,29 @@ import { ContentfulContentModelTypes } from "../../../ts/types/ContentfulTypes";
 import { useEffect, useState } from "react";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import PlaceEntry from "./PlaceEntry";
+import getBGColor from "../../../ts/utilities/getBGColor";
+import { removeReference } from "../../../ts/utilities/contentful/removeReference";
 
 interface PlaceEntryProps {
   entryId: string;
   sdk: FieldAppSDK;
   showImages?: boolean;
+  parentId: string;
+  field: string;
 }
 
 const PlaceEntryWithAccordion = ({
   entryId,
   sdk,
   showImages,
+  parentId,
+  field
 }: PlaceEntryProps) => {
   const [place, setPlace] = useState<any>();
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
   const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
@@ -63,6 +73,12 @@ const PlaceEntryWithAccordion = ({
   return entryType === "place" ? (
     <Accordion>
       <AccordionItem
+        className={css({
+          border: "2px solid #CFD9E0",
+          "& h2 > button:first-of-type": {
+            backgroundColor: `${getBGColor(entryType)} !important`,
+          },
+        })}
         title={
           <div
             className={css({
@@ -78,10 +94,14 @@ const PlaceEntryWithAccordion = ({
                 alignItems: "center",
               })}
             >
-              <div>
+              <Heading
+                className={css({
+                  margin: 0,
+                })}
+              >
                 {camelCaseToCapitalizedWords(place.sys?.contentType?.sys?.id)} -{" "}
                 {place.fields?.name?.[locale]}
-              </div>
+              </Heading>
               <Badge
                 className={css({
                   marginLeft: "0.5rem",
@@ -122,14 +142,37 @@ const PlaceEntryWithAccordion = ({
               >
                 Edit
               </Button>
+              <Button
+                size="small"
+                variant="negative"
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.stopPropagation();
+                  showRemoveConfirm ? setShowRemoveConfirm(false) : setShowRemoveConfirm(true);
+                }}
+              >
+                Remove
+              </Button>
+              <ModalConfirm
+                intent="positive"
+                isShown={showRemoveConfirm}
+                onCancel={() => {
+                  setShowRemoveConfirm(false);
+                }}
+                onConfirm={async () => {
+                  setShowRemoveConfirm(false);
+                  await removeReference(sdk, parentId, field, entryId);
+                }}
+              >
+                <Text>Do you really want to remove this reference?</Text>
+              </ModalConfirm>
             </div>
           </div>
         }
-        className={css({ border: "2px solid #CFD9E0" })}
       >
         {hasChildren ? (
           <div
             className={css({
+              marginTop: "1rem",
               display: "flex",
               flexDirection: "column",
               gap: "0.5rem",
@@ -141,6 +184,8 @@ const PlaceEntryWithAccordion = ({
                 entryId={item.sys.id}
                 sdk={sdk}
                 showImages={showImages}
+                parentId={entryId}
+                field={field}
               />
             ))}
           </div>
@@ -164,7 +209,13 @@ const PlaceEntryWithAccordion = ({
       </AccordionItem>
     </Accordion>
   ) : (
-    <PlaceEntry entryId={entryId} sdk={sdk} showImages={showImages} />
+    <PlaceEntry
+      entryId={entryId}
+      sdk={sdk}
+      showImages={showImages}
+      parentId={entryId}
+      field={field}
+    />
   );
 };
 

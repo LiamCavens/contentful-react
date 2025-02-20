@@ -10,8 +10,9 @@ import {
 import { Image } from "@contentful/f36-image";
 import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
-import { useEffect, useState, useCallback } from "react";
-import { EntityStatus } from "../../ts/types/ContentfulTypes";
+import { useEffect, useState } from "react";
+import { EntityStatus } from "../../../ts/types/ContentfulTypes";
+import { removeReference } from "../../../ts/utilities/contentful/removeReference";
 
 type ContentType = "linkedVariants";
 interface LinkedVariant {
@@ -56,19 +57,20 @@ interface LinkedVariant {
   image?: any;
 }
 
-const PlaceVariantField = ({
+const PoiVariant = ({
   linkedVariantId,
   linkedVariantObj,
   sdk,
   contentType,
   channel,
+  parentId,
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
   sdk: FieldAppSDK;
   contentType: ContentType;
   channel?: string;
-  showImages?: boolean;
+  parentId?: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -148,9 +150,6 @@ const PlaceVariantField = ({
     .trim()
     .replace(/^./, (str) => str.toUpperCase());
 
-  console.log("Liam: linkedVariant");
-  console.log(linkedVariant);
-
   return (
     <>
       {!isLoading && linkedVariant && (
@@ -213,9 +212,16 @@ const PlaceVariantField = ({
                 </Menu.Trigger>
                 <Menu.List>
                   <Menu.Item
-                    onClick={(e: React.MouseEvent) => {
+                    onClick={async (e: React.MouseEvent) => {
                       e.stopPropagation();
-                      sdk.notifier.warning("Not yet added this bit");
+                      if (parentId && linkedVariant?.sys.id) {
+                        await removeReference(
+                          sdk,
+                          parentId,
+                          "linkedVariants",
+                          linkedVariant.sys.id
+                        );
+                      }
                     }}
                   >
                     Remove
@@ -227,6 +233,8 @@ const PlaceVariantField = ({
           <div
             className={css({
               padding: "1rem",
+              display: "flex",
+              gap: "1rem",
             })}
             onClick={() => {
               sdk.navigator.openEntry(linkedVariant.sys.id, {
@@ -234,30 +242,23 @@ const PlaceVariantField = ({
               });
             }}
           >
-            <Heading as="h3">{linkedVariant.fields?.name?.[locale]}</Heading>
-            <div
-              className={css({
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "1rem",
-              })}
-            >
-              {" "}
+            <div>
+              <Heading as="h3">{linkedVariant.fields?.name?.[locale]}</Heading>
               <Paragraph>
                 {formatDescription(linkedVariant.fields?.description?.[locale])}
               </Paragraph>
-              {linkedVariant?.image && linkedVariant.image.file[locale].url && (
-                <Image
-                  className={css({
-                    maxWidth: "175px",
-                  })}
-                  src={linkedVariant.image.file[locale].url}
-                  alt={linkedVariant.image.description[locale]}
-                  height="175px"
-                  width="175px"
-                />
-              )}
-            </div>
+            </div>{" "}
+            {linkedVariant?.image && linkedVariant.image.file[locale].url && (
+              <Image
+                className={css({
+                  maxWidth: "175px",
+                })}
+                src={linkedVariant.image.file[locale].url}
+                alt={linkedVariant.image.description[locale]}
+                height="150px"
+                width="150px"
+              />
+            )}
           </div>
         </Card>
         // <EntryCard
@@ -268,4 +269,4 @@ const PlaceVariantField = ({
   );
 };
 
-export default PlaceVariantField;
+export default PoiVariant;

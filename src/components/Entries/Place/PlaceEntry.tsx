@@ -19,6 +19,7 @@ import {
 } from "../../../ts/types/ContentfulTypes";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import getBGColor from "../../../ts/utilities/getBGColor";
+import { removeReference } from "../../../ts/utilities/contentful/removeReference";
 
 interface PlaceEntry {
   fields: {
@@ -50,11 +51,15 @@ const PlaceEntry = ({
   sdk,
   showImages,
   depth = 0,
+  parentId,
+  field
 }: {
   entryId: string;
   sdk: FieldAppSDK;
   showImages?: boolean;
   depth?: number;
+  parentId: string;
+  field: string;
 }) => {
   const [place, setPlace] = useState<PlaceEntry>();
   const locale = "en-US";
@@ -109,9 +114,6 @@ const PlaceEntry = ({
     fetchData();
   }, [sdk, entryId]);
 
-  console.log("Liam: place");
-  console.log(place);
-
   return (
     <Flex flexDirection="column" margin="none">
       <div
@@ -135,7 +137,7 @@ const PlaceEntry = ({
                 alignItems: "center",
                 padding: "1rem",
                 borderBottom: "1px solid #e5e5e5",
-                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id)
+                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id),
               })}
             >
               <div>
@@ -178,9 +180,16 @@ const PlaceEntry = ({
                   </Menu.Trigger>
                   <Menu.List>
                     <Menu.Item
-                      onClick={(e: React.MouseEvent) => {
+                      onClick={async (e: React.MouseEvent) => {
                         e.stopPropagation();
-                        sdk.notifier.warning("Not yet added this bit");
+                        if (parentId && entryId) {
+                          await removeReference(
+                            sdk,
+                            parentId,
+                            "linkedVariants",
+                            entryId
+                          );
+                        }
                       }}
                     >
                       Remove
@@ -241,8 +250,10 @@ const PlaceEntry = ({
                       <PlaceEntry
                         key={itemId}
                         entryId={itemId}
+                        parentId={entryId}
                         sdk={sdk}
                         depth={depth + 1}
+                        field={field}
                       />
                     ))}
                   </ul>
