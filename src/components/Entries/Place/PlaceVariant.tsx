@@ -72,7 +72,7 @@ const PlaceVariantField = ({
   contentType: ContentType;
   channel?: string;
   parentId: string;
-  masterParentId?: string;
+  masterParentId: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -238,6 +238,7 @@ const PlaceVariantField = ({
               padding: "1rem",
               display: "flex",
               gap: "1rem",
+              justifyContent: "space-between",
             })}
             onClick={() => {
               sdk.navigator.openEntry(linkedVariant.sys.id, {

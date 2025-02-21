@@ -15,7 +15,7 @@ import { css } from "emotion";
 import { ContentfulContentModelTypes } from "../../../ts/types/ContentfulTypes";
 import { useEffect, useState } from "react";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
-import PlaceEntry from "./PlaceEntry";
+import PoiEntry from "../Poi/PoiEntry";
 import getBGColor from "../../../ts/utilities/getBGColor";
 import { removeReference } from "../../../ts/utilities/contentful/removeReference";
 
@@ -25,7 +25,7 @@ interface PlaceEntryProps {
   showImages?: boolean;
   parentId: string;
   field: string;
-  masterParentId?: string;
+  masterParentId: string;
 }
 
 const PlaceEntryWithAccordion = ({
@@ -34,7 +34,7 @@ const PlaceEntryWithAccordion = ({
   showImages,
   parentId,
   masterParentId,
-  field
+  field,
 }: PlaceEntryProps) => {
   const [place, setPlace] = useState<any>();
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
@@ -85,6 +85,7 @@ const PlaceEntryWithAccordion = ({
       <AccordionItem
         className={css({
           border: "2px solid #CFD9E0",
+          borderRadius: "6px",
           "& h2 > button:first-of-type": {
             backgroundColor: `${getBGColor(entryType)} !important`,
           },
@@ -157,7 +158,9 @@ const PlaceEntryWithAccordion = ({
                 variant="negative"
                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
-                  showRemoveConfirm ? setShowRemoveConfirm(false) : setShowRemoveConfirm(true);
+                  showRemoveConfirm
+                    ? setShowRemoveConfirm(false)
+                    : setShowRemoveConfirm(true);
                 }}
               >
                 Remove
@@ -170,7 +173,13 @@ const PlaceEntryWithAccordion = ({
                 }}
                 onConfirm={async () => {
                   setShowRemoveConfirm(false);
-                  await removeReference(sdk, parentId, field, entryId);
+                  await removeReference(
+                    sdk,
+                    parentId,
+                    field,
+                    entryId,
+                    masterParentId
+                  );
                 }}
               >
                 <Text>Do you really want to remove this reference?</Text>
@@ -183,6 +192,7 @@ const PlaceEntryWithAccordion = ({
           <div
             className={css({
               marginTop: "0.5rem",
+              marginBottom: "1rem",
               display: "flex",
               flexDirection: "column",
               gap: "1rem",
@@ -196,6 +206,7 @@ const PlaceEntryWithAccordion = ({
                 showImages={showImages}
                 parentId={entryId}
                 field={field}
+                masterParentId={masterParentId}
               />
             ))}
           </div>
@@ -219,12 +230,13 @@ const PlaceEntryWithAccordion = ({
       </AccordionItem>
     </Accordion>
   ) : (
-    <PlaceEntry
+    <PoiEntry
       entryId={entryId}
       sdk={sdk}
       showImages={showImages}
-      parentId={entryId}
+      parentId={parentId}
       field={field}
+      masterParentId={masterParentId}
     />
   );
 };

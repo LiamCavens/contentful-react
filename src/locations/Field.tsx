@@ -4,6 +4,7 @@ import { Button, ToggleButton } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { FieldAppSDK } from "@contentful/app-sdk";
 import PlaceEntryWithAccordion from "../components/Entries/Place/PlaceEntryWithAccordion";
+import PoiEntry from "../components/Entries/Poi/PoiEntry";
 import PoiVariant from "../components/Entries/Poi/PoiVariant";
 import PlaceVariant from "../components/Entries/Place/PlaceVariant";
 import TaxonomyEntry from "../components/Entries/TaxonomyEntry";
@@ -140,6 +141,17 @@ const fieldRenderers: {
     showCustomRendering: boolean,
     masterParentId: string
   ) => {
+    const [updateKey, setUpdateKey] = useState(0);
+
+    useEffect(() => {
+      const childSysListener = sdk.entry.onSysChanged(() => {
+        setUpdateKey((prev) => prev + 1);
+      });
+      return () => {
+        childSysListener();
+      };
+    }, [sdk.entry]);
+
     const CustomRenderer = (props: any) => {
       if (!showCustomRendering) {
         return false;
@@ -159,7 +171,7 @@ const fieldRenderers: {
       }
       if (contentType === "poi") {
         return (
-          <PlaceEntryWithAccordion
+          <PoiEntry
             entryId={props.entity.sys.id}
             sdk={sdk}
             field="linkedItems"
@@ -177,24 +189,24 @@ const fieldRenderers: {
     };
     return (
       <MultipleEntryReferenceEditor
-      key={`${showCustomRendering}`}
-      renderCustomCard={CustomRenderer}
-      viewType="link"
-      sdk={sdk}
-      isInitiallyDisabled
-      hasCardEditActions
-      parameters={{
-        instance: {
-        showCreateEntityAction: true,
-        showLinkEntityAction: true,
-        },
-      }}
-      onSortingEnd={({ oldIndex, newIndex }) => {
-        const items = Array.from(sdk.field.getValue());
-        const [movedItem] = items.splice(oldIndex, 1);
-        items.splice(newIndex, 0, movedItem);
-        sdk.field.setValue(items);
-      }}
+        key={`${showCustomRendering} - ${updateKey}`}
+        renderCustomCard={CustomRenderer}
+        viewType="link"
+        sdk={sdk}
+        isInitiallyDisabled
+        hasCardEditActions
+        parameters={{
+          instance: {
+            showCreateEntityAction: true,
+            showLinkEntityAction: true,
+          },
+        }}
+        onSortingEnd={({ oldIndex, newIndex }) => {
+          const items = Array.from(sdk.field.getValue());
+          const [movedItem] = items.splice(oldIndex, 1);
+          items.splice(newIndex, 0, movedItem);
+          sdk.field.setValue(items);
+        }}
       />
     );
   },
@@ -203,7 +215,7 @@ const fieldRenderers: {
     sdk: FieldAppSDK,
     _: string,
     __: (val: string) => void,
-    showCustomRendering: boolean,
+    showCustomRendering: boolean
   ) => {
     const CustomRenderer = (props: any) => {
       if (!showCustomRendering) {

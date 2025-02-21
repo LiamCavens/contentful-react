@@ -72,7 +72,7 @@ const PoiVariant = ({
   contentType: ContentType;
   channel?: string;
   parentId?: string;
-  masterParentId?: string;
+  masterParentId: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();

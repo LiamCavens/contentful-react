@@ -21,7 +21,7 @@ import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings
 import getBGColor from "../../../ts/utilities/getBGColor";
 import { removeReference } from "../../../ts/utilities/contentful/removeReference";
 
-interface PlaceEntry {
+interface PoiEntry {
   fields: {
     name: { [locale: string]: string };
     websiteUrl?: { [locale: string]: string };
@@ -29,7 +29,6 @@ interface PlaceEntry {
     image?: { [locale: string]: { sys: { id: string } } };
     price?: { [locale: string]: string };
     openingHours?: { [locale: string]: string };
-    linkedItems?: { [locale: string]: { sys: { id: string }[] } };
   };
   sys: {
     id: string;
@@ -43,17 +42,16 @@ interface PlaceEntry {
   metadata: {
     tags: { sys: { id: string }[] };
   };
-  linkedItems?: string[];
 }
 
-const PlaceEntry = ({
+const PoiEntry = ({
   entryId,
   sdk,
   showImages,
   depth = 0,
   parentId,
   field,
-  masterParentId
+  masterParentId,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
@@ -63,7 +61,7 @@ const PlaceEntry = ({
   field: string;
   masterParentId: string;
 }) => {
-  const [place, setPlace] = useState<PlaceEntry>();
+  const [poi, setPoi] = useState<PoiEntry>();
   const locale = "en-US";
 
   const getImageUrl = async (id: string) => {
@@ -74,10 +72,6 @@ const PlaceEntry = ({
       console.error(`Error fetching image asset with ID ${id}:`, error);
       return null;
     }
-  };
-
-  const formatUrl = (url: string) => {
-    return url.replace(/(https?:\/\/)?(www\.)?/, "");
   };
 
   const formatDescription = (description: any) => {
@@ -100,17 +94,14 @@ const PlaceEntry = ({
       const imageId = getEntry.fields.image?.[locale][0]?.sys?.id;
       const image = imageId ? await getImageUrl(imageId) : null;
 
-      const mappedPlace = {
+      const mappedPoi = {
         fields: getEntry.fields,
         image: image,
         sys: getEntry.sys,
         metadata: getEntry.metadata,
-        linkedItems: getEntry.fields.linkedItems?.[locale]?.map(
-          (item: any) => item.sys.id
-        ),
-      } as unknown as PlaceEntry;
+      } as unknown as PoiEntry;
 
-      setPlace(mappedPlace);
+      setPoi(mappedPoi);
     };
 
     fetchData();
@@ -125,7 +116,7 @@ const PlaceEntry = ({
           gap: "1rem",
         })}
       >
-        {place && (
+        {poi && (
           <Card
             className={css({
               padding: "0",
@@ -138,7 +129,7 @@ const PlaceEntry = ({
                 alignItems: "center",
                 padding: "1rem",
                 borderBottom: "1px solid #e5e5e5",
-                backgroundColor: getBGColor(place?.sys?.contentType?.sys?.id),
+                backgroundColor: getBGColor(poi?.sys?.contentType?.sys?.id),
               })}
             >
               <div>
@@ -148,8 +139,8 @@ const PlaceEntry = ({
                   })}
                   as="h3"
                 >{`${camelCaseToCapitalizedWords(
-                  place?.sys?.contentType?.sys?.id
-                )} -  ${place.fields?.name?.[locale]}`}</Heading>
+                  poi?.sys?.contentType?.sys?.id
+                )} -  ${poi.fields?.name?.[locale]}`}</Heading>
               </div>
               <div
                 className={css({
@@ -158,17 +149,17 @@ const PlaceEntry = ({
                   gap: "1rem",
                 })}
               >
-                {place?.sys?.fieldStatus["*"][locale] && (
+                {poi?.sys?.fieldStatus["*"][locale] && (
                   <Badge
                     variant={
-                      place?.sys?.fieldStatus["*"][locale] === "published"
+                      poi?.sys?.fieldStatus["*"][locale] === "published"
                         ? "positive"
-                        : place?.sys?.fieldStatus["*"][locale] === "changed"
+                        : poi?.sys?.fieldStatus["*"][locale] === "changed"
                         ? "warning"
                         : "negative"
                     }
                   >
-                    {place?.sys?.fieldStatus["*"][locale]}
+                    {poi?.sys?.fieldStatus["*"][locale]}
                   </Badge>
                 )}
                 <Menu>
@@ -187,13 +178,15 @@ const PlaceEntry = ({
                           await removeReference(
                             sdk,
                             parentId,
-                            "linkedVariants",
+                            "linkedItems",
                             entryId,
                             masterParentId
                           );
                         }
                       }}
                     >
+                      Parent : {parentId}
+                      entryId : {entryId}
                       Remove
                     </Menu.Item>
                   </Menu.List>
@@ -220,48 +213,22 @@ const PlaceEntry = ({
               >
                 <div>
                   <Paragraph>
-                    {formatDescription(place.fields?.description?.[locale])}
+                    {formatDescription(poi.fields?.description?.[locale])}
                   </Paragraph>
                 </div>
-                {place?.image &&
-                  place.image.file?.[locale].url &&
-                  showImages && (
-                    <Image
-                      className={css({
-                        maxWidth: "100px",
-                      })}
-                      src={place.image.file[locale].url}
-                      alt={place.image.description[locale]}
-                      height="100px"
-                      width="100px"
-                    />
-                  )}
+                {poi?.image && poi.image.file?.[locale].url && showImages && (
+                  <Image
+                    className={css({
+                      maxWidth: "100px",
+                    })}
+                    src={poi.image.file[locale].url}
+                    alt={poi.image.description[locale]}
+                    height="100px"
+                    width="100px"
+                  />
+                )}
               </div>
             </div>
-            {place?.linkedItems &&
-              place.linkedItems.length > 0 &&
-              depth === 0 && (
-                <div
-                  className={css({
-                    padding: "1rem",
-                    borderTop: "1px solid #e5e5e5",
-                  })}
-                >
-                  <ul>
-                    {place.linkedItems.map((itemId) => (
-                      <PlaceEntry
-                        key={itemId}
-                        entryId={itemId}
-                        parentId={entryId}
-                        sdk={sdk}
-                        depth={depth + 1}
-                        field={field}
-                        masterParentId={masterParentId}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
           </Card>
         )}
       </div>
@@ -269,4 +236,4 @@ const PlaceEntry = ({
   );
 };
 
-export default PlaceEntry;
+export default PoiEntry;
