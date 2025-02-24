@@ -172,6 +172,16 @@ const PoiEntry = ({
                   </Menu.Trigger>
                   <Menu.List>
                     <Menu.Item
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        sdk.navigator.openEntry(entryId, {
+                          slideIn: true,
+                        });
+                      }}
+                    >
+                      Edit
+                    </Menu.Item>
+                    <Menu.Item
                       onClick={async (e: React.MouseEvent) => {
                         e.stopPropagation();
                         if (parentId && entryId) {
@@ -185,8 +195,6 @@ const PoiEntry = ({
                         }
                       }}
                     >
-                      Parent : {parentId}
-                      entryId : {entryId}
                       Remove
                     </Menu.Item>
                   </Menu.List>
@@ -195,14 +203,8 @@ const PoiEntry = ({
             </div>
             <div
               className={css({
-                padding: "1rem",
-                cursor: "pointer",
+                padding: "1rem"
               })}
-              onClick={() => {
-                sdk.navigator.openEntry(entryId, {
-                  slideIn: true,
-                });
-              }}
             >
               <div
                 className={css({

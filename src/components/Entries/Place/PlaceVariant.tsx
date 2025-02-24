@@ -214,6 +214,16 @@ const PlaceVariantField = ({
                 </Menu.Trigger>
                 <Menu.List>
                   <Menu.Item
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      sdk.navigator.openEntry(linkedVariant.sys.id, {
+                        slideIn: true,
+                      });
+                    }}
+                  >
+                    Edit
+                  </Menu.Item>
+                  <Menu.Item
                     onClick={async (e: React.MouseEvent) => {
                       e.stopPropagation();
                       if (parentId && linkedVariant?.sys.id) {
@@ -240,11 +250,6 @@ const PlaceVariantField = ({
               gap: "1rem",
               justifyContent: "space-between",
             })}
-            onClick={() => {
-              sdk.navigator.openEntry(linkedVariant.sys.id, {
-                slideIn: true,
-              });
-            }}
           >
             <div>
               <Heading as="h3">{linkedVariant.fields?.name?.[locale]}</Heading>

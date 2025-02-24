@@ -53,7 +53,7 @@ const PlaceEntry = ({
   depth = 0,
   parentId,
   field,
-  masterParentId
+  masterParentId,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
@@ -181,6 +181,16 @@ const PlaceEntry = ({
                   </Menu.Trigger>
                   <Menu.List>
                     <Menu.Item
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        sdk.navigator.openEntry(entryId, {
+                          slideIn: true,
+                        });
+                      }}
+                    >
+                      Edit
+                    </Menu.Item>
+                    <Menu.Item
                       onClick={async (e: React.MouseEvent) => {
                         e.stopPropagation();
                         if (parentId && entryId) {
@@ -202,14 +212,8 @@ const PlaceEntry = ({
             </div>
             <div
               className={css({
-                padding: "1rem",
-                cursor: "pointer",
+                padding: "1rem"   
               })}
-              onClick={() => {
-                sdk.navigator.openEntry(entryId, {
-                  slideIn: true,
-                });
-              }}
             >
               <div
                 className={css({

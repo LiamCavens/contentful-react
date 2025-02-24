@@ -33,6 +33,7 @@ const fieldRenderers: {
     showCustomRendering: boolean,
     masterParentId: string
   ) => {
+    const [updateKey, setUpdateKey] = useState(0);
     const channels = ["App", "Web", "Print"];
     const placeVariants = [
       "placeVariantApp",
@@ -40,6 +41,22 @@ const fieldRenderers: {
       "placeVariantPrint",
     ];
     const poiVariants = ["poiVariantApp", "poiVariantWeb", "poiVariantPrint"];
+
+    useEffect(() => {
+      const childSysListener = sdk.entry.onSysChanged(() => {
+        setUpdateKey((prev) => prev + 1); // Force re-render on entry updates
+      });
+
+      const closeChildListener = sdk.navigator.onSlideInNavigation(() => {
+        setUpdateKey((prev) => prev + 1);
+      })
+
+      return () => {
+        childSysListener();
+        closeChildListener();
+      };
+    }, [sdk.entry]);
+
     const CustomRenderer = useCallback(
       (props: any) => {
         const variantType = props.contentType.sys.id as
@@ -55,8 +72,7 @@ const fieldRenderers: {
         }
 
         if (filter !== "all" && linkedVariantChannel !== filter) {
-          // We return an empty fragment to prevent contentfuls default rendering
-          return <></>;
+          return <></>; // Prevents Contentful's default rendering
         }
 
         if (placeVariants.includes(variantType)) {
@@ -118,7 +134,7 @@ const fieldRenderers: {
         </div>
 
         <MultipleEntryReferenceEditor
-          key={`${filter}-${showCustomRendering}`}
+          key={`${filter}-${showCustomRendering}-${updateKey}`} // Ensures re-render
           renderCustomCard={CustomRenderer}
           viewType="link"
           sdk={sdk}
@@ -147,8 +163,14 @@ const fieldRenderers: {
       const childSysListener = sdk.entry.onSysChanged(() => {
         setUpdateKey((prev) => prev + 1);
       });
+
+      const closeChildListener = sdk.navigator.onSlideInNavigation(() => {
+        setUpdateKey((prev) => prev + 1);
+      });
+
       return () => {
         childSysListener();
+        closeChildListener();
       };
     }, [sdk.entry]);
 

@@ -27,9 +27,6 @@ export const removeReference = async (
     // Fetch the parent entry
     const parentEntry = await sdk.cma.entry.get({ entryId: parentId });
 
-    console.log('Liam:parentEntry');
-    console.log(parentEntry);
-
     // Ensure the field exists and is an array
     const existingReferences: Reference[] =
       parentEntry.fields[fieldKey]?.["en-US"] || [];
@@ -54,9 +51,6 @@ export const removeReference = async (
       const parentEntryMaster = await sdk.cma.entry.get({
         entryId: masterParentId,
       });
-
-      console.log('Liam:parentEntryMaster');
-      console.log(parentEntryMaster);
 
       await sdk.cma.entry.update(
         { entryId: masterParentId },
