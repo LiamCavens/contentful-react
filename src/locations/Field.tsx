@@ -23,7 +23,6 @@ const fieldRenderers: {
     filter: string,
     setFilter: (val: string) => void,
     showCustomRendering: boolean,
-    masterParentId: string
   ) => JSX.Element;
 } = {
   linkedVariants: (
@@ -31,7 +30,6 @@ const fieldRenderers: {
     filter: string,
     setFilter: (val: string) => void,
     showCustomRendering: boolean,
-    masterParentId: string
   ) => {
     const [updateKey, setUpdateKey] = useState(0);
     const channels = ["App", "Web", "Print"];
@@ -83,7 +81,6 @@ const fieldRenderers: {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
-              masterParentId={masterParentId}
             />
           );
         } else if (poiVariants.includes(variantType)) {
@@ -94,7 +91,6 @@ const fieldRenderers: {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
-              masterParentId={masterParentId}
             />
           );
         } else {
@@ -155,7 +151,6 @@ const fieldRenderers: {
     _: string,
     __: (val: string) => void,
     showCustomRendering: boolean,
-    masterParentId: string
   ) => {
     const [updateKey, setUpdateKey] = useState(0);
 
@@ -187,7 +182,6 @@ const fieldRenderers: {
             sdk={sdk}
             field="linkedItems"
             parentId={sdk.ids.entry}
-            masterParentId={masterParentId}
           />
         );
       }
@@ -198,7 +192,6 @@ const fieldRenderers: {
             sdk={sdk}
             field="linkedItems"
             parentId={sdk.ids.entry}
-            masterParentId={masterParentId}
           />
         );
       }
@@ -269,7 +262,6 @@ const Field = () => {
   const fieldContentType = sdk.field.id as keyof typeof fieldRenderers;
   const [filter, setFilter] = useState<string>("all");
   const [showCustomRendering, setShowCustomRendering] = useState(true);
-  const masterParentId = sdk.ids.entry;
 
   useEffect(() => {
     sdk.window.startAutoResizer();
@@ -278,7 +270,7 @@ const Field = () => {
   return (
     <div>
       <ToggleButton
-        className={css({ marginBottom: "0.5rem", marginRight: "0.5rem" })}
+        className={css({ marginBottom: "1rem", marginRight: "1rem" })}
         isActive={showCustomRendering}
         onToggle={() => setShowCustomRendering(!showCustomRendering)}
       >
@@ -289,8 +281,7 @@ const Field = () => {
           sdk,
           filter,
           setFilter,
-          showCustomRendering,
-          masterParentId
+          showCustomRendering
         )
       ) : (
         <p className={css({ padding: "1rem" })}>

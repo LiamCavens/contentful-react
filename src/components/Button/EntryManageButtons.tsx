@@ -19,7 +19,6 @@ interface ManageButtonProps {
   entryId: string;
   sdk: FieldAppSDK;
   parentId: string;
-  masterParentId: string;
   field: string;
 }
 
@@ -27,7 +26,6 @@ const EntryManageButtons = ({
   sdk,
   entryId,
   parentId,
-  masterParentId,
   field,
 }: ManageButtonProps) => {
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -50,19 +48,6 @@ const EntryManageButtons = ({
       >
         Edit
       </Button>
-      <ModalConfirm
-        intent="positive"
-        isShown={showRemoveConfirm}
-        onCancel={() => {
-          setShowRemoveConfirm(false);
-        }}
-        onConfirm={async () => {
-          setShowRemoveConfirm(false);
-          await removeReference(sdk, parentId, field, entryId, masterParentId);
-        }}
-      >
-        <Text>Do you really want to remove this reference?</Text>
-      </ModalConfirm>
       <Menu>
         <Menu.Trigger>
           <IconButton
@@ -76,16 +61,6 @@ const EntryManageButtons = ({
         </Menu.Trigger>
         <Menu.List>
           <Menu.Item
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              sdk.navigator.openEntry(entryId, {
-                slideIn: true,
-              });
-            }}
-          >
-            Edit
-          </Menu.Item>
-          <Menu.Item
             onClick={async (e: React.MouseEvent) => {
               e.stopPropagation();
               showRemoveConfirm
@@ -97,6 +72,19 @@ const EntryManageButtons = ({
           </Menu.Item>
         </Menu.List>
       </Menu>
+      <ModalConfirm
+        intent="positive"
+        isShown={showRemoveConfirm}
+        onCancel={() => {
+          setShowRemoveConfirm(false);
+        }}
+        onConfirm={async () => {
+          setShowRemoveConfirm(false);
+          await removeReference(sdk, parentId, field, entryId);
+        }}
+      >
+        <Text>Do you really want to remove this reference?</Text>
+      </ModalConfirm>
     </Flex>
   );
 };

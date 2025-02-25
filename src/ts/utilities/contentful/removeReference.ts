@@ -21,7 +21,6 @@ export const removeReference = async (
   parentId: string,
   fieldKey: string,
   linkedReferenceId: string,
-  masterParentId: string
 ) => {
   try {
     // Fetch the parent entry
@@ -46,17 +45,6 @@ export const removeReference = async (
     await sdk.cma.entry.update({ entryId: parentId }, parentEntry);
 
     sdk.notifier.success("Reference removed successfully!");
-
-    if (masterParentId) {
-      const parentEntryMaster = await sdk.cma.entry.get({
-        entryId: masterParentId,
-      });
-
-      await sdk.cma.entry.update(
-        { entryId: masterParentId },
-        parentEntryMaster
-      );
-    }
   } catch (error) {
     console.error("Error removing linked reference:", error);
     sdk.notifier.error("Failed to remove reference.");

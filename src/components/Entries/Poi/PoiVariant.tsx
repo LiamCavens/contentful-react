@@ -13,6 +13,7 @@ import { css } from "emotion";
 import { useEffect, useState } from "react";
 import { EntityStatus } from "../../../ts/types/ContentfulTypes";
 import { removeReference } from "../../../ts/utilities/contentful/removeReference";
+import EntryManageButtons from "../../Button/EntryManageButtons";
 
 type ContentType = "linkedVariants";
 interface LinkedVariant {
@@ -64,15 +65,13 @@ const PoiVariant = ({
   contentType,
   channel,
   parentId,
-  masterParentId,
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
   sdk: FieldAppSDK;
   contentType: ContentType;
   channel?: string;
-  parentId?: string;
-  masterParentId: string;
+  parentId: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -97,10 +96,10 @@ const PoiVariant = ({
             fields: variant.fields,
             sys: variant.sys,
             image: getVariantImage,
-          };
+          } as unknown as LinkedVariant;
 
-          setLinkedVariant(mappedVariant as unknown as LinkedVariant);
-          setFieldStatusFromLinkedVariant();
+          setLinkedVariant(mappedVariant);
+          setFieldStatusFromLinkedVariant(mappedVariant);
         } catch (error) {
           console.error("Error fetching linked variant:", error);
         } finally {
@@ -110,7 +109,7 @@ const PoiVariant = ({
       }
 
       setLinkedVariant(linkedVariantObj);
-      setFieldStatusFromLinkedVariant();
+      if (linkedVariantObj) setFieldStatusFromLinkedVariant(linkedVariantObj);
       setIsLoading(false);
     };
 
@@ -127,10 +126,10 @@ const PoiVariant = ({
     }
   };
 
-  const setFieldStatusFromLinkedVariant = () => {
-    if (linkedVariant) {
-      setFieldStatus(linkedVariant.sys.fieldStatus?.["*"][locale]);
-    }
+  const setFieldStatusFromLinkedVariant = (
+    thisLinkedVariant: LinkedVariant
+  ) => {
+    setFieldStatus(thisLinkedVariant.sys.fieldStatus?.["*"][locale]);
   };
 
   const formatDescription = (description: any) => {
@@ -204,43 +203,12 @@ const PoiVariant = ({
                   {fieldStatus}
                 </Badge>
               )}
-              <Menu>
-                <Menu.Trigger>
-                  <IconButton
-                    variant="secondary"
-                    icon={<MenuIcon />}
-                    aria-label="toggle menu"
-                  />
-                </Menu.Trigger>
-                <Menu.List>
-                  <Menu.Item
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      sdk.navigator.openEntry(linkedVariant?.sys.id, {
-                        slideIn: true,
-                      });
-                    }}
-                  >
-                    Edit
-                  </Menu.Item>
-                  <Menu.Item
-                    onClick={async (e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      if (parentId && linkedVariant?.sys.id) {
-                        await removeReference(
-                          sdk,
-                          parentId,
-                          "linkedVariants",
-                          linkedVariant.sys.id,
-                          masterParentId
-                        );
-                      }
-                    }}
-                  >
-                    Remove
-                  </Menu.Item>
-                </Menu.List>
-              </Menu>
+              <EntryManageButtons
+                sdk={sdk}
+                entryId={linkedVariant?.sys.id}
+                parentId={parentId}
+                field={"linkedVariants"}
+              />
             </div>
           </div>
           <div

@@ -52,8 +52,7 @@ const PlaceEntry = ({
   showImages,
   depth = 0,
   parentId,
-  field,
-  masterParentId,
+  field
 }: {
   entryId: string;
   sdk: FieldAppSDK;
@@ -61,7 +60,6 @@ const PlaceEntry = ({
   depth?: number;
   parentId: string;
   field: string;
-  masterParentId: string;
 }) => {
   const [place, setPlace] = useState<PlaceEntry>();
   const locale = "en-US";
@@ -199,7 +197,7 @@ const PlaceEntry = ({
                             parentId,
                             "linkedVariants",
                             entryId,
-                            masterParentId
+                            
                           );
                         }
                       }}
@@ -260,7 +258,6 @@ const PlaceEntry = ({
                         sdk={sdk}
                         depth={depth + 1}
                         field={field}
-                        masterParentId={masterParentId}
                       />
                     ))}
                   </ul>

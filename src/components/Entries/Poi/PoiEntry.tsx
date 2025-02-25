@@ -2,13 +2,10 @@ import { FieldAppSDK } from "@contentful/app-sdk";
 import {
   Card,
   Flex,
-  Menu,
   Badge,
   Heading,
   Paragraph,
-  IconButton,
 } from "@contentful/f36-components";
-import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
 // Currently commented out as it can be added back in later
 import { Image } from "@contentful/f36-image";
 import { css } from "emotion";
@@ -19,7 +16,7 @@ import {
 } from "../../../ts/types/ContentfulTypes";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import getBGColor from "../../../ts/utilities/getBGColor";
-import { removeReference } from "../../../ts/utilities/contentful/removeReference";
+import EntryManageButtons from "../../Button/EntryManageButtons";
 
 interface PoiEntry {
   fields: {
@@ -48,10 +45,7 @@ const PoiEntry = ({
   entryId,
   sdk,
   showImages,
-  depth = 0,
   parentId,
-  field,
-  masterParentId,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
@@ -59,7 +53,6 @@ const PoiEntry = ({
   depth?: number;
   parentId: string;
   field: string;
-  masterParentId: string;
 }) => {
   const [poi, setPoi] = useState<PoiEntry>();
   const locale = "en-US";
@@ -162,48 +155,17 @@ const PoiEntry = ({
                     {poi?.sys?.fieldStatus["*"][locale]}
                   </Badge>
                 )}
-                <Menu>
-                  <Menu.Trigger>
-                    <IconButton
-                      variant="secondary"
-                      icon={<MenuIcon />}
-                      aria-label="toggle menu"
-                    />
-                  </Menu.Trigger>
-                  <Menu.List>
-                    <Menu.Item
-                      onClick={(e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        sdk.navigator.openEntry(entryId, {
-                          slideIn: true,
-                        });
-                      }}
-                    >
-                      Edit
-                    </Menu.Item>
-                    <Menu.Item
-                      onClick={async (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        if (parentId && entryId) {
-                          await removeReference(
-                            sdk,
-                            parentId,
-                            "linkedItems",
-                            entryId,
-                            masterParentId
-                          );
-                        }
-                      }}
-                    >
-                      Remove
-                    </Menu.Item>
-                  </Menu.List>
-                </Menu>
+                <EntryManageButtons
+                  sdk={sdk}
+                  entryId={entryId}
+                  parentId={parentId}
+                  field={"linkedVariants"}
+                />
               </div>
             </div>
             <div
               className={css({
-                padding: "1rem"
+                padding: "1rem",
               })}
             >
               <div
