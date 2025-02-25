@@ -3,21 +3,17 @@ import {
   Accordion,
   AccordionItem,
   Badge,
-  Button,
   Heading,
-  ModalConfirm,
   Paragraph,
   Pagination,
-  Text,
 } from "@contentful/f36-components";
-import { SettingsIcon } from "@contentful/f36-icons";
 import { css } from "emotion";
 import { ContentfulContentModelTypes } from "../../../ts/types/ContentfulTypes";
 import { useEffect, useState } from "react";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import PoiEntry from "../Poi/PoiEntry";
 import getBGColor from "../../../ts/utilities/getBGColor";
-import { removeReference } from "../../../ts/utilities/contentful/removeReference";
+import EntryManageButtons from "../../Button/EntryManageButtons";
 
 interface PlaceEntryProps {
   entryId: string;
@@ -40,7 +36,6 @@ const PlaceEntryWithAccordion = ({
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
   const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
@@ -142,48 +137,7 @@ const PlaceEntryWithAccordion = ({
                   {place.sys.fieldStatus["*"][locale]}
                 </Badge>
               )}
-              <Button
-                startIcon={<SettingsIcon variant="muted" />}
-                size="small"
-                variant="transparent"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.stopPropagation();
-                  sdk.navigator.openEntry(entryId, { slideIn: true });
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                size="small"
-                variant="negative"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.stopPropagation();
-                  showRemoveConfirm
-                    ? setShowRemoveConfirm(false)
-                    : setShowRemoveConfirm(true);
-                }}
-              >
-                Remove
-              </Button>
-              <ModalConfirm
-                intent="positive"
-                isShown={showRemoveConfirm}
-                onCancel={() => {
-                  setShowRemoveConfirm(false);
-                }}
-                onConfirm={async () => {
-                  setShowRemoveConfirm(false);
-                  await removeReference(
-                    sdk,
-                    parentId,
-                    field,
-                    entryId,
-                    masterParentId
-                  );
-                }}
-              >
-                <Text>Do you really want to remove this reference?</Text>
-              </ModalConfirm>
+              <EntryManageButtons sdk={sdk} entryId={entryId} parentId={parentId} masterParentId={masterParentId} field={field}  />
             </div>
           </div>
         }
