@@ -21,6 +21,7 @@ interface PlaceEntryProps {
   showImages?: boolean;
   parentId: string;
   field: string;
+  masterParentId: string;
 }
 
 const PlaceEntryWithAccordion = ({
@@ -29,6 +30,7 @@ const PlaceEntryWithAccordion = ({
   showImages,
   parentId,
   field,
+  masterParentId,
 }: PlaceEntryProps) => {
   const [place, setPlace] = useState<any>();
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
@@ -135,7 +137,13 @@ const PlaceEntryWithAccordion = ({
                   {place.sys.fieldStatus["*"][locale]}
                 </Badge>
               )}
-              <EntryManageButtons sdk={sdk} entryId={entryId} parentId={parentId} field={field}  />
+              <EntryManageButtons
+                sdk={sdk}
+                entryId={entryId}
+                parentId={parentId}
+                field={field}
+                masterParentId={masterParentId}
+              />
             </div>
           </div>
         }
@@ -158,6 +166,7 @@ const PlaceEntryWithAccordion = ({
                 showImages={showImages}
                 parentId={entryId}
                 field={field}
+                masterParentId={masterParentId}
               />
             ))}
           </div>
@@ -187,6 +196,7 @@ const PlaceEntryWithAccordion = ({
       showImages={showImages}
       parentId={parentId}
       field={field}
+      masterParentId={masterParentId}
     />
   );
 };

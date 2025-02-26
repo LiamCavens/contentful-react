@@ -65,6 +65,7 @@ const PoiVariant = ({
   contentType,
   channel,
   parentId,
+  masterParentId
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
@@ -72,6 +73,7 @@ const PoiVariant = ({
   contentType: ContentType;
   channel?: string;
   parentId: string;
+  masterParentId: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -208,6 +210,7 @@ const PoiVariant = ({
                 entryId={linkedVariant?.sys.id}
                 parentId={parentId}
                 field={"linkedVariants"}
+                masterParentId={masterParentId}
               />
             </div>
           </div>

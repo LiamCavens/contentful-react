@@ -20,6 +20,7 @@ interface ManageButtonProps {
   sdk: FieldAppSDK;
   parentId: string;
   field: string;
+  masterParentId: string;
 }
 
 const EntryManageButtons = ({
@@ -27,6 +28,7 @@ const EntryManageButtons = ({
   entryId,
   parentId,
   field,
+  masterParentId,
 }: ManageButtonProps) => {
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
@@ -80,7 +82,7 @@ const EntryManageButtons = ({
         }}
         onConfirm={async () => {
           setShowRemoveConfirm(false);
-          await removeReference(sdk, parentId, field, entryId);
+          await removeReference(sdk, parentId, field, entryId, masterParentId);
         }}
       >
         <Text>Do you really want to remove this reference?</Text>

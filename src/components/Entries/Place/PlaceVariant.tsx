@@ -63,7 +63,8 @@ const PlaceVariantField = ({
   sdk,
   contentType,
   channel,
-  parentId
+  parentId,
+  masterParentId,
 }: {
   linkedVariantId?: string;
   linkedVariantObj?: LinkedVariant;
@@ -71,6 +72,7 @@ const PlaceVariantField = ({
   contentType: ContentType;
   channel?: string;
   parentId: string;
+  masterParentId: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [linkedVariant, setLinkedVariant] = useState<LinkedVariant>();
@@ -230,6 +232,7 @@ const PlaceVariantField = ({
                           parentId,
                           "linkedVariants",
                           linkedVariant.sys.id,
+                          masterParentId
                         );
                       }
                     }}

@@ -49,9 +49,9 @@ the upload command to your CI pipeline.
 
 For this command to work, the following environment variables must be set:
 
-- `CONTENTFUL_ORG_ID` - The ID of your organization
-- `CONTENTFUL_APP_DEF_ID` - The ID of the app to which to add the bundle
-- `CONTENTFUL_ACCESS_TOKEN` - A personal [access token](https://www.contentful.com/developers/docs/references/content-management-api/#/reference/personal-access-tokens)
+- `VITE_CONTENTFUL_ORG_ID` - The ID of your organization
+- `VITE_CONTENTFUL_APP_DEF_ID` - The ID of the app to which to add the bundle
+- `VITE_CONTENTFUL_ACCESS_TOKEN` - A personal [access token](https://www.contentful.com/developers/docs/references/content-management-api/#/reference/personal-access-tokens)
 
 ## Libraries to use
 

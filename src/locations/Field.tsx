@@ -4,6 +4,7 @@ import { Button, ToggleButton } from "@contentful/f36-components";
 import { useSDK } from "@contentful/react-apps-toolkit";
 import { FieldAppSDK } from "@contentful/app-sdk";
 import PlaceEntryWithAccordion from "../components/Entries/Place/PlaceEntryWithAccordion";
+import ExternalSpaceReferenceCards from "../components/Entries/ExternalSpace/ExternalSpaceReferenceCards";
 import PoiEntry from "../components/Entries/Poi/PoiEntry";
 import PoiVariant from "../components/Entries/Poi/PoiVariant";
 import PlaceVariant from "../components/Entries/Place/PlaceVariant";
@@ -23,6 +24,7 @@ const fieldRenderers: {
     filter: string,
     setFilter: (val: string) => void,
     showCustomRendering: boolean,
+    masterParentId: string
   ) => JSX.Element;
 } = {
   linkedVariants: (
@@ -30,6 +32,7 @@ const fieldRenderers: {
     filter: string,
     setFilter: (val: string) => void,
     showCustomRendering: boolean,
+    masterParentId: string
   ) => {
     const [updateKey, setUpdateKey] = useState(0);
     const channels = ["App", "Web", "Print"];
@@ -42,12 +45,12 @@ const fieldRenderers: {
 
     useEffect(() => {
       const childSysListener = sdk.entry.onSysChanged(() => {
-        setUpdateKey((prev) => prev + 1); // Force re-render on entry updates
+        setUpdateKey((prev) => prev + 1);
       });
 
       const closeChildListener = sdk.navigator.onSlideInNavigation(() => {
         setUpdateKey((prev) => prev + 1);
-      })
+      });
 
       return () => {
         childSysListener();
@@ -81,6 +84,7 @@ const fieldRenderers: {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
+              masterParentId={masterParentId}
             />
           );
         } else if (poiVariants.includes(variantType)) {
@@ -91,6 +95,7 @@ const fieldRenderers: {
               sdk={sdk}
               contentType="linkedVariants"
               channel={linkedVariantChannel}
+              masterParentId={masterParentId}
             />
           );
         } else {
@@ -151,6 +156,7 @@ const fieldRenderers: {
     _: string,
     __: (val: string) => void,
     showCustomRendering: boolean,
+    masterParentId: string
   ) => {
     const [updateKey, setUpdateKey] = useState(0);
 
@@ -182,6 +188,7 @@ const fieldRenderers: {
             sdk={sdk}
             field="linkedItems"
             parentId={sdk.ids.entry}
+            masterParentId={masterParentId}
           />
         );
       }
@@ -192,6 +199,7 @@ const fieldRenderers: {
             sdk={sdk}
             field="linkedItems"
             parentId={sdk.ids.entry}
+            masterParentId={masterParentId}
           />
         );
       }
@@ -223,6 +231,30 @@ const fieldRenderers: {
           sdk.field.setValue(items);
         }}
       />
+    );
+  },
+  renderingSpace: (
+    sdk: FieldAppSDK,
+  ) => {
+    const [updateKey, setUpdateKey] = useState(0);
+
+    useEffect(() => {
+      const childSysListener = sdk.entry.onSysChanged(() => {
+        setUpdateKey((prev) => prev + 1);
+      });
+
+      const closeChildListener = sdk.navigator.onSlideInNavigation(() => {
+        setUpdateKey((prev) => prev + 1);
+      });
+
+      return () => {
+        childSysListener();
+        closeChildListener();
+      };
+    }, [sdk.entry]);
+
+    return (
+      <ExternalSpaceReferenceCards sdk={sdk} key={`${updateKey}`} />
     );
   },
   // Pretty much redundant, but here for completeness
@@ -262,6 +294,7 @@ const Field = () => {
   const fieldContentType = sdk.field.id as keyof typeof fieldRenderers;
   const [filter, setFilter] = useState<string>("all");
   const [showCustomRendering, setShowCustomRendering] = useState(true);
+  const masterParentId = sdk.ids.entry;
 
   useEffect(() => {
     sdk.window.startAutoResizer();
@@ -269,19 +302,22 @@ const Field = () => {
 
   return (
     <div>
-      <ToggleButton
-        className={css({ marginBottom: "1rem", marginRight: "1rem" })}
-        isActive={showCustomRendering}
-        onToggle={() => setShowCustomRendering(!showCustomRendering)}
-      >
-        Show Custom Rendering
-      </ToggleButton>
+      {fieldContentType !== "renderingSpace" && (
+        <ToggleButton
+          className={css({ marginBottom: "1rem", marginRight: "1rem" })}
+          isActive={showCustomRendering}
+          onToggle={() => setShowCustomRendering(!showCustomRendering)}
+        >
+          Show Custom Rendering
+        </ToggleButton>
+      )}
       {fieldRenderers[fieldContentType] ? (
         fieldRenderers[fieldContentType](
           sdk,
           filter,
           setFilter,
-          showCustomRendering
+          showCustomRendering,
+          masterParentId
         )
       ) : (
         <p className={css({ padding: "1rem" })}>

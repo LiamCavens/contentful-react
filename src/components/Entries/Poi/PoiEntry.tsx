@@ -5,6 +5,8 @@ import {
   Badge,
   Heading,
   Paragraph,
+  Accordion,
+  AccordionItem,
 } from "@contentful/f36-components";
 // Currently commented out as it can be added back in later
 import { Image } from "@contentful/f36-image";
@@ -46,6 +48,7 @@ const PoiEntry = ({
   sdk,
   showImages,
   parentId,
+  masterParentId,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
@@ -53,9 +56,11 @@ const PoiEntry = ({
   depth?: number;
   parentId: string;
   field: string;
+  masterParentId: string;
 }) => {
   const [poi, setPoi] = useState<PoiEntry>();
   const locale = "en-US";
+  const entryType = poi?.sys?.contentType?.sys?.id;
 
   const getImageUrl = async (id: string) => {
     try {
@@ -84,7 +89,9 @@ const PoiEntry = ({
   useEffect(() => {
     const fetchData = async () => {
       const getEntry = await sdk.cma.entry.get({ entryId });
-      const imageId = getEntry.fields.image?.[locale][0]?.sys?.id;
+      const imageId = Array.isArray(getEntry.fields.image?.[locale])
+        ? getEntry.fields.image?.[locale][0]?.sys?.id
+        : getEntry.fields.image?.[locale]?.sys?.id;
       const image = imageId ? await getImageUrl(imageId) : null;
 
       const mappedPoi = {
@@ -110,64 +117,68 @@ const PoiEntry = ({
         })}
       >
         {poi && (
-          <Card
-            className={css({
-              padding: "0",
-            })}
-          >
-            <div
+          <Accordion>
+            <AccordionItem
               className={css({
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "1rem",
-                borderBottom: "1px solid #e5e5e5",
-                backgroundColor: getBGColor(poi?.sys?.contentType?.sys?.id),
+                border: "2px solid #CFD9E0",
+                borderRadius: "6px",
+                "& h2 > button:first-of-type": {
+                  backgroundColor: `${getBGColor("poi")} !important`,
+                },
               })}
-            >
-              <div>
-                <Heading
+              title={
+                <div
                   className={css({
-                    margin: 0,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    alignItems: "center",
+                    borderBottom: "1px solid #e5e5e5",
+                    backgroundColor: getBGColor(poi?.sys?.contentType?.sys?.id),
                   })}
-                  as="h3"
-                >{`${camelCaseToCapitalizedWords(
-                  poi?.sys?.contentType?.sys?.id
-                )} -  ${poi.fields?.name?.[locale]}`}</Heading>
-              </div>
-              <div
-                className={css({
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                })}
-              >
-                {poi?.sys?.fieldStatus["*"][locale] && (
-                  <Badge
-                    variant={
-                      poi?.sys?.fieldStatus["*"][locale] === "published"
-                        ? "positive"
-                        : poi?.sys?.fieldStatus["*"][locale] === "changed"
-                        ? "warning"
-                        : "negative"
-                    }
+                >
+                  <div>
+                    <Heading
+                      className={css({
+                        margin: 0,
+                      })}
+                      as="h3"
+                    >{`${camelCaseToCapitalizedWords(
+                      poi?.sys?.contentType?.sys?.id
+                    )} -  ${poi.fields?.name?.[locale]}`}</Heading>
+                  </div>
+                  <div
+                    className={css({
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                    })}
                   >
-                    {poi?.sys?.fieldStatus["*"][locale]}
-                  </Badge>
-                )}
-                <EntryManageButtons
-                  sdk={sdk}
-                  entryId={entryId}
-                  parentId={parentId}
-                  field={"linkedVariants"}
-                />
-              </div>
-            </div>
-            <div
-              className={css({
-                padding: "1rem",
-              })}
+                    {poi?.sys?.fieldStatus["*"][locale] && (
+                      <Badge
+                        variant={
+                          poi?.sys?.fieldStatus["*"][locale] === "published"
+                            ? "positive"
+                            : poi?.sys?.fieldStatus["*"][locale] === "changed"
+                            ? "warning"
+                            : "negative"
+                        }
+                      >
+                        {poi?.sys?.fieldStatus["*"][locale]}
+                      </Badge>
+                    )}
+                    <EntryManageButtons
+                      sdk={sdk}
+                      entryId={entryId}
+                      parentId={parentId}
+                      field={"linkedItems"}
+                      masterParentId={masterParentId}
+                    />
+                  </div>
+                </div>
+              }
             >
+              {" "}
               <div
                 className={css({
                   display: "flex",
@@ -180,7 +191,7 @@ const PoiEntry = ({
                     {formatDescription(poi.fields?.description?.[locale])}
                   </Paragraph>
                 </div>
-                {poi?.image && poi.image.file?.[locale].url && showImages && (
+                {poi?.image && poi.image.file?.[locale].url && (
                   <Image
                     className={css({
                       maxWidth: "100px",
@@ -192,8 +203,8 @@ const PoiEntry = ({
                   />
                 )}
               </div>
-            </div>
-          </Card>
+            </AccordionItem>
+          </Accordion>
         )}
       </div>
     </Flex>
