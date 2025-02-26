@@ -68,10 +68,12 @@ const PlaceEntryWithAccordion = ({
   };
 
   const hasChildren = linkedItems.length > 0;
+  const startIndex = currentPage * itemsPerPage;
   const paginatedItems = linkedItems.slice(
-    currentPage,
-    currentPage + itemsPerPage
+    startIndex,
+    Math.min(startIndex + itemsPerPage, linkedItems.length)
   );
+
   const entryType: ContentfulContentModelTypes =
     place.sys?.contentType?.sys?.id;
 
