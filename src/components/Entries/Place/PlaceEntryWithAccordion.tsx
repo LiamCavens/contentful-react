@@ -195,9 +195,7 @@ const PlaceEntryWithAccordion = ({
     <PoiEntry
       entryId={entryId}
       sdk={sdk}
-      showImages={showImages}
       parentId={parentId}
-      field={field}
       masterParentId={masterParentId}
     />
   );

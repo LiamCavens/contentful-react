@@ -1,12 +1,12 @@
-import { ContentfulContentModelTypes } from "../types/ContentfulTypes";
-
-export default function getBGColor(contentType: ContentfulContentModelTypes): string {
+export default function getBGColor(
+  contentType: string
+): string {
   switch (contentType) {
-    case 'place':
+    case "place":
       return "#98cbff";
-    case 'poi':
+    case "poi":
       return "#cce6ff";
     default:
-      return '#FFFFFF'; // Default hex code
+      return "#FFFFFF"; // Default hex code
   }
 }

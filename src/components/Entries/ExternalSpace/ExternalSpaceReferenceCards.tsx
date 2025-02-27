@@ -11,7 +11,9 @@ const ACCESS_TOKEN = import.meta.env.VITE_CONTENT_DELIVERY_ACCESS_TOKEN;
 const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEM;
 
 const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
-  const [placesData, setPlacesData] = useState<any[]>([]);
+  const [currentEntry, setCurrentEntry] = useState<EntryProps>();
+  const [placesData, setPlacesData] = useState<EntryProps[]>([]);
+  const [updateKey, setUpdateKey] = useState(0);
   const [linkedVariantIds, setLinkedVariantIds] = useState<string[]>([]);
   const entryId = sdk.ids.entry;
   const locale = "en-US";
@@ -19,10 +21,18 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
   useEffect(() => {
     const fetchData = async () => {
       const getEntry = await sdk.cma.entry.get({ entryId });
+      setCurrentEntry(getEntry);
       await getEntryPlaces(getEntry);
     };
 
-    fetchData();
+    const childSysListener = sdk.entry.onSysChanged(() => {
+      setUpdateKey((prev) => prev + 1);
+    });
+
+    return () => {
+      fetchData();
+      childSysListener();
+    }
   }, [sdk, entryId]);
 
   const getEntryPlaces = async (entry: EntryProps) => {
@@ -54,30 +64,34 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
       })
     );
 
-    // If for each place in fetchedPLaces, get the sys.id, and if that id is in linkedVariantIds, then we remove that opject from the fetchedPlaces array
+    // If the place.sys.contentType.sys.id does not equeal "place" or "poidetails" then filter them out
     const filteredPlaces = fetchedPlaces.filter((place: EntryProps) => {
-      return !linkedVariantIds.flat().includes(place.sys.id);
+      const contentType = place.sys.contentType.sys.id;
+      return contentType === "place" || contentType === "poi";
     });
+
 
     setPlacesData(filteredPlaces);
     setLinkedVariantIds(placeIds);
   };
 
-  return (
-    <Flex
-      flexDirection="column"
-      margin="none"
-      className={css({ gap: "1rem" })}
-    >
+  return currentEntry ? (
+    <Flex flexDirection="column" margin="none" className={css({ gap: "1rem" })}>
       {placesData.map((place, index) => (
         <PlaceWithVariants
-          key={index}
+          key={index + updateKey}
           sdk={sdk}
           entry={place}
           variantIds={linkedVariantIds}
+          parentEntry={currentEntry}
+          places={placesData}
         />
       ))}
     </Flex>
+  ) : (
+    <Card>
+      <Text>Loading...</Text>
+    </Card>
   );
 };
 

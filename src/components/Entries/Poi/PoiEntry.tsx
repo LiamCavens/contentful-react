@@ -1,74 +1,51 @@
 import { FieldAppSDK } from "@contentful/app-sdk";
 import {
-  Card,
-  Flex,
-  Badge,
-  Heading,
-  Paragraph,
   Accordion,
   AccordionItem,
+  Badge,
+  Flex,
+  Heading,
+  Paragraph,
+  Pagination,
 } from "@contentful/f36-components";
 // Currently commented out as it can be added back in later
 import { Image } from "@contentful/f36-image";
 import { css } from "emotion";
 import { useEffect, useState } from "react";
-import {
-  EntityStatus,
-  ContentfulContentModelTypes,
-} from "../../../ts/types/ContentfulTypes";
 import { camelCaseToCapitalizedWords } from "../../../ts/utilities/formatStrings";
 import getBGColor from "../../../ts/utilities/getBGColor";
 import EntryManageButtons from "../../Button/EntryManageButtons";
-
-interface PoiEntry {
-  fields: {
-    name: { [locale: string]: string };
-    websiteUrl?: { [locale: string]: string };
-    description?: { [locale: string]: string };
-    image?: { [locale: string]: { sys: { id: string } } };
-    price?: { [locale: string]: string };
-    openingHours?: { [locale: string]: string };
-  };
-  sys: {
-    id: string;
-    fieldStatus: { "*": { [locale: string]: EntityStatus } };
-    contentType: { sys: { id: ContentfulContentModelTypes } };
-  };
-  image: {
-    file: { [locale: string]: { url: string } };
-    description: { [locale: string]: string };
-  } | null;
-  metadata: {
-    tags: { sys: { id: string }[] };
-  };
-}
+import { EntryProps, AssetProps } from "contentful-management";
 
 const PoiEntry = ({
   entryId,
   sdk,
-  showImages,
   parentId,
   masterParentId,
+  field,
 }: {
   entryId: string;
   sdk: FieldAppSDK;
-  showImages?: boolean;
-  depth?: number;
   parentId: string;
-  field: string;
   masterParentId: string;
+  field?: string
 }) => {
-  const [poi, setPoi] = useState<PoiEntry>();
+  const [poi, setPoi] = useState<EntryProps>();
+  const [poiImage, setPoiImage] = useState<AssetProps>();
+  const [linkedItems, setLinkedItems] = useState<EntryProps[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
+  const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
-  const entryType = poi?.sys?.contentType?.sys?.id;
 
-  const getImageUrl = async (id: string) => {
+  const getImageUrl = async (id: string): Promise<AssetProps | undefined> => {
     try {
       const imageAsset = await sdk.cma.asset.get({ assetId: id });
-      return imageAsset.fields;
+      return imageAsset;
     } catch (error) {
       console.error(`Error fetching image asset with ID ${id}:`, error);
-      return null;
+      return undefined;
     }
   };
 
@@ -88,24 +65,32 @@ const PoiEntry = ({
 
   useEffect(() => {
     const fetchData = async () => {
-      const getEntry = await sdk.cma.entry.get({ entryId });
-      const imageId = Array.isArray(getEntry.fields.image?.[locale])
-        ? getEntry.fields.image?.[locale][0]?.sys?.id
-        : getEntry.fields.image?.[locale]?.sys?.id;
-      const image = imageId ? await getImageUrl(imageId) : null;
+      const entry = await sdk.cma.entry.get({ entryId });
+      const imageId = Array.isArray(entry.fields.image?.[locale])
+        ? entry.fields.image?.[locale][0]?.sys?.id
+        : entry.fields.image?.[locale]?.sys?.id;
+      const image = imageId ? await getImageUrl(imageId) : undefined;
 
-      const mappedPoi = {
-        fields: getEntry.fields,
-        image: image,
-        sys: getEntry.sys,
-        metadata: getEntry.metadata,
-      } as unknown as PoiEntry;
-
-      setPoi(mappedPoi);
+      setPoi(entry);
+      setPoiImage(image);
+      setLinkedItems(entry.fields?.linkedItems?.[locale] || []);
     };
 
     fetchData();
   }, [sdk, entryId]);
+
+  const handleViewPerPageChange = (i: number) => {
+    // Reset page to match item being shown on new View per page
+    setCurrentPage(Math.floor((itemsPerPage * currentPage + 1) / i));
+    setItemsPerPage(i);
+  };
+
+  const hasChildren = linkedItems.length > 0;
+  const startIndex = currentPage * itemsPerPage;
+  const paginatedItems = linkedItems.slice(
+    startIndex,
+    Math.min(startIndex + itemsPerPage, linkedItems.length)
+  );
 
   return (
     <Flex flexDirection="column" margin="none">
@@ -154,16 +139,20 @@ const PoiEntry = ({
                       gap: "1rem",
                     })}
                   >
+                    {/*@ts-expect-error - outdated library now uses fieldStatus instead of status */}
                     {poi?.sys?.fieldStatus["*"][locale] && (
                       <Badge
                         variant={
+                          /*@ts-expect-error - outdated library now uses fieldStatus instead of status */
                           poi?.sys?.fieldStatus["*"][locale] === "published"
                             ? "positive"
-                            : poi?.sys?.fieldStatus["*"][locale] === "changed"
+                            : /*@ts-expect-error - outdated library now uses fieldStatus instead of status */
+                            poi?.sys?.fieldStatus["*"][locale] === "changed"
                             ? "warning"
                             : "negative"
                         }
                       >
+                        {/*@ts-expect-error - outdated library now uses fieldStatus instead of status */}
                         {poi?.sys?.fieldStatus["*"][locale]}
                       </Badge>
                     )}
@@ -191,18 +180,55 @@ const PoiEntry = ({
                     {formatDescription(poi.fields?.description?.[locale])}
                   </Paragraph>
                 </div>
-                {poi?.image && poi.image.file?.[locale].url && (
+                {poiImage && poiImage.fields.file[locale].url && (
                   <Image
                     className={css({
                       maxWidth: "100px",
                     })}
-                    src={poi.image.file[locale].url}
-                    alt={poi.image.description[locale]}
+                    src={poiImage.fields.file[locale].url}
+                    alt={
+                      poiImage.fields.description?.[locale] ||
+                      `Picture of ${poi.fields.name[locale]}`
+                    }
                     height="100px"
                     width="100px"
                   />
                 )}
               </div>
+              {hasChildren && (
+                <div
+                  className={css({
+                    marginTop: "0.5rem",
+                    marginBottom: "1rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "1rem",
+                  })}
+                >
+                  {paginatedItems.map((item: any) => (
+                    <PoiEntry
+                      key={item.sys.id}
+                      entryId={item.sys.id}
+                      sdk={sdk}
+                      parentId={entryId}
+                      masterParentId={masterParentId}
+                    />
+                  ))}
+                </div>
+              )}
+              {linkedItems.length > itemsPerPage && (
+                <Pagination
+                  activePage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  isLastPage={isLastPage}
+                  viewPerPageOptions={[3, 10, 10000000]}
+                  showViewPerPage
+                  totalItems={linkedItems.length}
+                  onPageChange={(page) => setCurrentPage(page)}
+                  onViewPerPageChange={handleViewPerPageChange}
+                  pageLength={pageLength}
+                />
+              )}
             </AccordionItem>
           </Accordion>
         )}

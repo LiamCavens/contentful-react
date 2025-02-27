@@ -23,10 +23,14 @@ const PlaceWithVariants = ({
   sdk,
   entry,
   variantIds,
+  parentEntry,
+  places,
 }: {
   sdk: FieldAppSDK;
   entry: EntryProps;
   variantIds: string[];
+  parentEntry: EntryProps;
+  places: EntryProps[];
 }) => {
   const [linkedVariantEntries, setLinkedVariantEntries] = useState<
     EntryProps[]
@@ -38,9 +42,6 @@ const PlaceWithVariants = ({
   // @ts-ignore // library is outdated and status is now fieldStatus
   const fieldStatus = entry.sys.fieldStatus["*"][locale];
   const entryName = entry.fields?.name?.[locale];
-
-  console.log("Liam: entry");
-  console.log(entry);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,13 +71,38 @@ const PlaceWithVariants = ({
           }
         )
       );
-      console.log("Liam: linkedVariants");
-      console.log(linkedVariants);
       setLinkedVariantEntries(linkedVariants);
     };
 
     fetchData();
   }, [sdk, entry]);
+
+  const updateLinkedVariants = async (selectedVariant: EntryProps) => {
+    const newUrn = `crn:contentful:::content:spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${selectedVariant.sys.id}`;
+    const currentPlaces = parentEntry.fields.places?.[locale] || [];
+    const newReferencesVariant = {
+      sys: {
+        type: "ResourceLink",
+        linkType: "Contentful:Entry",
+        urn: newUrn,
+      },
+    };
+
+    const updatedParentEntryData = {
+      ...parentEntry,
+      fields: {
+        ...parentEntry.fields,
+        places: {
+          [locale]: [...currentPlaces, newReferencesVariant],
+        },
+      },
+    };
+
+    await sdk.cma.entry.update(
+      { entryId: parentEntry.sys.id },
+      updatedParentEntryData
+    );
+  };
 
   return (
     <Flex flexDirection="column" margin="none">
@@ -96,7 +122,6 @@ const PlaceWithVariants = ({
                 justifyContent: "space-between",
                 width: "100%",
                 alignItems: "center",
-                borderBottom: "1px solid #e5e5e5",
                 backgroundColor: getBGColor(contentType),
               })}
             >
@@ -104,8 +129,10 @@ const PlaceWithVariants = ({
                 <Heading
                   className={css({
                     margin: 0,
+                    padding: 0,
                   })}
                   as="h3"
+                  margin="none"
                 >{`${camelCaseToCapitalizedWords(
                   contentType
                 )} -  ${entryName}`}</Heading>
@@ -136,8 +163,8 @@ const PlaceWithVariants = ({
         >
           <div
             className={css({
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              display: "flex",
+              flexDirection: "column",
               gap: "1rem",
               paddingTop: "0.5rem",
             })}
@@ -156,6 +183,7 @@ const PlaceWithVariants = ({
                       ? "#DFF0D8" // Light green highlight
                       : "transparent",
                   })}
+                  onClick={() => updateLinkedVariants(linkedVariant)}
                 >
                   <Heading as="h4">
                     {linkedVariant.fields?.name?.[locale] || "Unnamed Variant"}
