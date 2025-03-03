@@ -35,7 +35,7 @@ const PoiEntry = ({
   const [linkedItems, setLinkedItems] = useState<EntryProps[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
-  const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
+  const isLastPage = (currentPage + 1) * itemsPerPage >= linkedItems.length;
   const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
 

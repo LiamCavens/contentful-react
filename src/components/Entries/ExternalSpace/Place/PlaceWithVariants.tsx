@@ -17,7 +17,7 @@ import getBGColor from "../../../../ts/utilities/getBGColor";
 
 const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
-const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEM;
+const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
 
 const PlaceWithVariants = ({
   sdk,
@@ -88,12 +88,25 @@ const PlaceWithVariants = ({
       },
     };
 
+    let updatedPlaces;
+    const isVariantSelected = currentPlaces.some(
+      (place: any) => place.sys.urn === newUrn
+    );
+
+    if (isVariantSelected) {
+      updatedPlaces = currentPlaces.filter(
+        (place: any) => place.sys.urn !== newUrn
+      );
+    } else {
+      updatedPlaces = [...currentPlaces, newReferencesVariant];
+    }
+
     const updatedParentEntryData = {
       ...parentEntry,
       fields: {
         ...parentEntry.fields,
         places: {
-          [locale]: [...currentPlaces, newReferencesVariant],
+          [locale]: updatedPlaces,
         },
       },
     };

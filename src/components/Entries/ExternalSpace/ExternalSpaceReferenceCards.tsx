@@ -8,7 +8,7 @@ import { css } from "emotion";
 const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
 const ACCESS_TOKEN = import.meta.env.VITE_CONTENT_DELIVERY_ACCESS_TOKEN;
-const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEM;
+const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
 
 const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
   const [currentEntry, setCurrentEntry] = useState<EntryProps>();
@@ -25,15 +25,16 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
       await getEntryPlaces(getEntry);
     };
 
+    fetchData();
+
     const childSysListener = sdk.entry.onSysChanged(() => {
       setUpdateKey((prev) => prev + 1);
     });
 
     return () => {
-      fetchData();
       childSysListener();
-    }
-  }, [sdk, entryId]);
+    };
+  }, [sdk, entryId, updateKey]);
 
   const getEntryPlaces = async (entry: EntryProps) => {
     const places = entry.fields?.places?.[locale] || [];
@@ -44,32 +45,43 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
 
     const fetchedPlaces = await Promise.all(
       placeIds.map(async (entryId: string) => {
-        const response = await fetch(
-          `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${entryId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch entry ${entryId}: ${response.statusText}`
+        try {
+          const response = await fetch(
+            `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${entryId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
-        }
 
-        return response.json();
+          if (!response.ok) {
+            console.error(
+              `Failed to fetch entry ${entryId}: ${response.statusText}`
+            );
+            return null;
+          }
+
+          return response.json();
+        } catch (error) {
+          if (error instanceof Error) {
+            console.error(`Failed to fetch entry ${entryId}: ${error.message}`);
+          } else {
+            console.error(`Failed to fetch entry ${entryId}: ${String(error)}`);
+          }
+          return null;
+        }
       })
     );
 
+    const validFetchedPlaces = fetchedPlaces.filter((place) => place !== null);
+
     // If the place.sys.contentType.sys.id does not equeal "place" or "poidetails" then filter them out
-    const filteredPlaces = fetchedPlaces.filter((place: EntryProps) => {
+    const filteredPlaces = validFetchedPlaces.filter((place: EntryProps) => {
       const contentType = place.sys.contentType.sys.id;
       return contentType === "place" || contentType === "poi";
     });
-
 
     setPlacesData(filteredPlaces);
     setLinkedVariantIds(placeIds);
