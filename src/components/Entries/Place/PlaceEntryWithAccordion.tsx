@@ -35,25 +35,92 @@ const PlaceEntryWithAccordion = ({
   const [place, setPlace] = useState<any>();
   const [linkedItems, setLinkedItems] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
   const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
 
   useEffect(() => {
+    //console.log("Fetching entry with ID:", entryId); // Debugging
     const fetchData = async () => {
-      const entry = await sdk.cma.entry.get({ entryId });
-      setPlace(entry);
-      const items = entry.fields?.linkedItems?.[locale] || [];
+      try {
+        const entry = await sdk.cma.entry.get({ entryId });
+        setPlace(entry);
+      } catch (error) {
+        console.error("Error fetching entry:", error);
+      }
+    };
+  
+    fetchData();
+  }, [sdk, entryId]);
 
-      // if item in items sys.id === 'poi' then put it at end of array else keep it in place
+  const fetchInBatches = async (ids: string[], batchSize: number, delay: number) => {
+    const results: any[] = [];
+  
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      //console.log(`Fetching batch: ${batch}`);
+  
+      const batchResults = await Promise.all(
+        batch.map(async (id) => {
+          try {
+            const response = await sdk.cma.entry.get({ entryId: id });
+            return response;
+          } catch (error) {
+            console.error(`Error fetching entry ${id}:`, error);
+            return null; // Prevent errors from stopping execution
+          }
+        })
+      );
+  
+      results.push(...batchResults.filter(Boolean)); // Remove null results
+  
+      if (i + batchSize < ids.length) {
+        //console.log(`Waiting ${delay}ms before next batch...`);
+        await new Promise((resolve) => setTimeout(resolve, delay)); // Rate-limit to 10 requests/sec
+      }
+    }
+  
+    return results;
+  };
+
+  
+  
+  useEffect(() => {
+    //console.log("Fetching entry with ID:", entryId); // Debugging
+    const fetchData = async () => {
+      try {
+        const entry = await sdk.cma.entry.get({ entryId });
+        setPlace(entry);
+        const items = entry.fields?.linkedItems?.[locale] || [];
+        if (!Array.isArray(items)) {
+          console.error("linkedItems is not an array:", items);
+          return;
+        }
+      // Sorting logic
       items.sort((a: any, b: any) => {
-        if (a.sys.id === "poi") return 1;
-        if (b.sys.id === "poi") return -1;
+        if (a.sys.contentType?.sys?.id === "poi") return 1;
+        if (b.sys.contentType?.sys?.id === "poi") return -1;
         return 0;
       });
 
-      setLinkedItems(items);
+      // Extract Entry IDs
+      const entryIds = items.map((item: any) => item.sys.id);
+      //console.log("Fetching linked entries:", entryIds);
+
+      // Fetch entries in batches of 10 per second
+      const linkedEntries = await fetchInBatches(entryIds, 10, 500);
+      setLinkedItems(linkedEntries);
+      //console.log("Fetched linked entries:", linkedEntries);
+
+      } catch (error: any) {
+        console.error(
+          `Error fetching entry with ID: ${entryId}`,
+          error.code ? `Code: ${error.code}` : "",
+          error.message ? `Message: ${error.message}` : "",
+          error?.data ? `Data: ${JSON.stringify(error.data, null, 2)}` : ""
+        );
+      }
     };
 
     fetchData();
@@ -181,7 +248,7 @@ const PlaceEntryWithAccordion = ({
             activePage={currentPage}
             itemsPerPage={itemsPerPage}
             isLastPage={isLastPage}
-            viewPerPageOptions={[3, 10, 10000000]}
+            viewPerPageOptions={[5, 10, 20, 50]}
             showViewPerPage
             totalItems={linkedItems.length}
             onPageChange={(page) => setCurrentPage(page)}

@@ -19,6 +19,20 @@ const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
 const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
 
+const formatDescription = (description: any) => {
+  if (!description) {
+    return "";
+  }
+  if (typeof description === "string") {
+    return description;
+  }
+  return description.content
+    .map((content: any) =>
+      content.content.map((content: any) => content.value).join("")
+    )
+    .join("");
+};
+
 const PlaceWithVariants = ({
   sdk,
   entry,
@@ -121,9 +135,11 @@ const PlaceWithVariants = ({
     <Flex flexDirection="column" margin="none">
       <Accordion>
         <AccordionItem
+          isExpanded={true}
           className={css({
             border: "2px solid #CFD9E0",
             borderRadius: "6px",
+            cursor: "pointer",
             "& h2 > button:first-of-type": {
               backgroundColor: `${getBGColor(contentType)} !important`,
             },
@@ -183,31 +199,40 @@ const PlaceWithVariants = ({
             })}
           >
             {linkedVariantEntries.length > 0 ? (
-              linkedVariantEntries.map((linkedVariant: EntryProps) => (
-                <div
-                  key={linkedVariant.sys.id}
-                  className={css({
-                    display: "flex",
-                    justifyContent: "space-between",
-                    border: "1px solid #CFD9E0",
-                    borderRadius: "6px",
-                    padding: "1rem",
-                    backgroundColor: variantIds.includes(linkedVariant.sys.id)
-                      ? "#DFF0D8" // Light green highlight
-                      : "transparent",
-                  })}
-                  onClick={() => updateLinkedVariants(linkedVariant)}
-                >
-                  <Heading as="h4">
-                    {linkedVariant.fields?.name?.[locale] || "Unnamed Variant"}
-                  </Heading>
-                  <div>
-                    {variantIds.includes(linkedVariant.sys.id) && (
-                      <Badge variant="positive">Active</Badge>
-                    )}
-                  </div>
-                </div>
-              ))
+  linkedVariantEntries.map((linkedVariant: EntryProps) => (
+    <div
+      key={linkedVariant.sys.id}
+      className={css({
+        display: "flex",
+        justifyContent: "space-between",
+        border: "1px solid #CFD9E0",
+        borderRadius: "6px",
+        padding: "1rem",
+        backgroundColor: variantIds.includes(linkedVariant.sys.id)
+          ? "#DFF0D8" // Light green for active items
+          : "transparent",
+        cursor: "pointer", // Make items clickable
+        transition: "background-color 0.3s ease-in-out",
+        "&:hover": {
+          backgroundColor: "#E3E8EF", // Light gray on hover
+        },
+      })}
+      onClick={() => updateLinkedVariants(linkedVariant)}
+    >
+      <Heading as="h4">
+        {linkedVariant.fields?.name?.[locale] || "Unnamed Variant"}
+      </Heading>
+      
+      <div>
+      <Paragraph>
+                {formatDescription(linkedVariant.fields?.description?.[locale])}
+              </Paragraph>
+        {variantIds.includes(linkedVariant.sys.id) && (
+          <Badge variant="positive">Active</Badge>
+        )}
+      </div>
+    </div>
+  ))
             ) : (
               <Paragraph>No linked variants</Paragraph>
             )}

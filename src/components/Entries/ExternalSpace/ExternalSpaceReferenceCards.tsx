@@ -1,97 +1,127 @@
 import { FieldAppSDK } from "@contentful/app-sdk";
 import { Flex, Card, Text } from "@contentful/f36-components";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { EntryProps } from "contentful-management";
 import PlaceWithVariants from "./Place/PlaceWithVariants";
 import { css } from "emotion";
 
 const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
-const ACCESS_TOKEN = import.meta.env.VITE_CONTENT_DELIVERY_ACCESS_TOKEN;
 const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
 
+const MAX_CONCURRENT_REQUESTS = 5; // Controls API request batching
+
 const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
-  const [currentEntry, setCurrentEntry] = useState<EntryProps>();
+  const [currentEntry, setCurrentEntry] = useState<EntryProps | null>(null);
   const [placesData, setPlacesData] = useState<EntryProps[]>([]);
   const [updateKey, setUpdateKey] = useState(0);
   const [linkedVariantIds, setLinkedVariantIds] = useState<string[]>([]);
   const entryId = sdk.ids.entry;
   const locale = "en-US";
 
-  useEffect(() => {
-    const fetchData = async () => {
+  /**
+   * Fetches the current entry and its related places
+   */
+  const fetchData = useCallback(async () => {
+    try {
       const getEntry = await sdk.cma.entry.get({ entryId });
       setCurrentEntry(getEntry);
       await getEntryPlaces(getEntry);
-    };
+    } catch (error) {
+      console.error("Error fetching entry data:", error);
+    }
+  }, [entryId, sdk.cma]);
 
+  useEffect(() => {
     fetchData();
 
-    const childSysListener = sdk.entry.onSysChanged(() => {
+    const unsubscribeSysListener = sdk.entry.onSysChanged(() => {
       setUpdateKey((prev) => prev + 1);
     });
 
     return () => {
-      childSysListener();
+      unsubscribeSysListener();
     };
-  }, [sdk, entryId, updateKey]);
+  }, [fetchData, sdk.entry]);
 
-  const getEntryPlaces = async (entry: EntryProps) => {
-    const places = entry.fields?.places?.[locale] || [];
+  /**
+   * Batches API requests to avoid overloading the API.
+   */
+  const batchFetch = async (ids: string[], batchSize: number) => {
+    const results: EntryProps[] = [];
 
-    const placeIds = places.map((place: any) => {
-      return place.sys.urn.split("/").pop();
-    });
-
-    const fetchedPlaces = await Promise.all(
-      placeIds.map(async (entryId: string) => {
-        try {
-          const response = await fetch(
-            `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${entryId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) {
-            console.error(
-              `Failed to fetch entry ${entryId}: ${response.statusText}`
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (id) => {
+          try {
+            const response = await fetch(
+              `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+                  "Content-Type": "application/json",
+                },
+              }
             );
+
+            if (!response.ok) {
+              console.warn(`Failed to fetch entry ${id}: ${response.statusText}`);
+              return null;
+            }
+
+            return response.json();
+          } catch (error) {
+            console.error(`Error fetching entry ${id}:`, error);
             return null;
           }
+        })
+      );
 
-          return response.json();
-        } catch (error) {
-          if (error instanceof Error) {
-            console.error(`Failed to fetch entry ${entryId}: ${error.message}`);
-          } else {
-            console.error(`Failed to fetch entry ${entryId}: ${String(error)}`);
-          }
-          return null;
-        }
-      })
-    );
+      // Append valid entries to results
+      results.push(...batchResults.filter((entry): entry is EntryProps => entry !== null));
+    }
 
-    const validFetchedPlaces = fetchedPlaces.filter((place) => place !== null);
+    return results;
+  };
 
-    // If the place.sys.contentType.sys.id does not equeal "place" or "poidetails" then filter them out
-    const filteredPlaces = validFetchedPlaces.filter((place: EntryProps) => {
-      const contentType = place.sys.contentType.sys.id;
-      return contentType === "place" || contentType === "poi";
-    });
+  /**
+   * Fetches related places data from Contentful with throttled requests
+   * @param entry - The current entry
+   */
+  const getEntryPlaces = async (entry: EntryProps) => {
+    try {
+      const places = entry.fields?.places?.[locale] || [];
 
-    setPlacesData(filteredPlaces);
-    setLinkedVariantIds(placeIds);
+      if (!Array.isArray(places) || places.length === 0) {
+        setPlacesData([]);
+        setLinkedVariantIds([]);
+        return;
+      }
+
+      const placeIds = places.map((place: any) =>
+        place.sys.urn.split("/").pop()
+      );
+
+      const fetchedPlaces = await batchFetch(placeIds, MAX_CONCURRENT_REQUESTS);
+
+      // Filter out invalid responses and check content type
+      const validPlaces = fetchedPlaces.filter(
+        (place) => ["place", "poi"].includes(place.sys.contentType.sys.id)
+      );
+
+      setPlacesData(validPlaces);
+      setLinkedVariantIds(placeIds);
+    } catch (error) {
+      console.error("Error fetching places data:", error);
+    }
   };
 
   return currentEntry ? (
     <Flex flexDirection="column" margin="none" className={css({ gap: "1rem" })}>
-      {placesData.map((place, index) => (
+      {placesData.map((place) => (
         <PlaceWithVariants
-          key={index + updateKey}
+          key={place.sys.id + updateKey}
           sdk={sdk}
           entry={place}
           variantIds={linkedVariantIds}

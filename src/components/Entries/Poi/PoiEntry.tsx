@@ -34,8 +34,8 @@ const PoiEntry = ({
   const [poiImage, setPoiImage] = useState<AssetProps>();
   const [linkedItems, setLinkedItems] = useState<EntryProps[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
-  const isLastPage = (currentPage + 1) * itemsPerPage >= linkedItems.length;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const isLastPage = (currentPage + 1) * itemsPerPage >= 120;
   const pageLength = isLastPage ? 18 : undefined;
   const locale = "en-US";
 
@@ -221,7 +221,7 @@ const PoiEntry = ({
                   activePage={currentPage}
                   itemsPerPage={itemsPerPage}
                   isLastPage={isLastPage}
-                  viewPerPageOptions={[3, 10, 10000000]}
+                  viewPerPageOptions={[5, 10, 20, 50]}
                   showViewPerPage
                   totalItems={linkedItems.length}
                   onPageChange={(page) => setCurrentPage(page)}
