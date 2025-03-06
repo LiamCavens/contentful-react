@@ -1,6 +1,6 @@
 export function camelCaseToCapitalizedWords(input: string): string {
   if (input === 'poi') {
-    return 'PoI';
+    return 'POI';
   }
   return input
     .replace(/([A-Z])/g, ' $1') // Add space before each uppercase letter

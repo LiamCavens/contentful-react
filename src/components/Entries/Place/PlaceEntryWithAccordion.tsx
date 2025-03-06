@@ -3,6 +3,7 @@ import {
   Accordion,
   AccordionItem,
   Badge,
+  DisplayText,
   Heading,
   Paragraph,
   Pagination,
@@ -134,7 +135,14 @@ const PlaceEntryWithAccordion = ({
     setItemsPerPage(i);
   };
 
-  const hasChildren = linkedItems.length > 0;
+  const placeChildren = linkedItems.filter(
+    (item) => item.sys.contentType.sys.id === "place"
+  );
+  const poiChildren = linkedItems.filter(
+    (item) => item.sys.contentType.sys.id === "poi"
+  );
+
+  const hasChildren = placeChildren.length > 0;
   const startIndex = currentPage * itemsPerPage;
   const paginatedItems = linkedItems.slice(
     startIndex,
@@ -182,8 +190,18 @@ const PlaceEntryWithAccordion = ({
                   marginLeft: "0.5rem",
                 })}
                 variant="secondary"
+                textTransform="none"
               >
-                {linkedItems.length} Children
+                {placeChildren.length} Place
+              </Badge>
+              <Badge
+                className={css({
+                  marginLeft: "0.5rem",
+                })}
+                variant="secondary"
+                textTransform="none"
+              >
+                {poiChildren.length} POI
               </Badge>
             </div>
             <div
@@ -240,7 +258,15 @@ const PlaceEntryWithAccordion = ({
             ))}
           </div>
         ) : (
-          <Paragraph fontSize="fontSizeL">No linked Items</Paragraph>
+          <DisplayText
+            className={css({
+              marginBottom: "0",
+            })}
+            fontSize="fontSizeL"
+            margin="none"
+          >
+            No Place Children
+          </DisplayText>
         )}
 
         {linkedItems.length > itemsPerPage && (
@@ -259,12 +285,13 @@ const PlaceEntryWithAccordion = ({
       </AccordionItem>
     </Accordion>
   ) : (
-    <PoiEntry
-      entryId={entryId}
-      sdk={sdk}
-      parentId={parentId}
-      masterParentId={masterParentId}
-    />
+    <></>
+    // <PoiEntry
+    //   entryId={entryId}
+    //   sdk={sdk}
+    //   parentId={parentId}
+    //   masterParentId={masterParentId}
+    // />
   );
 };
 
