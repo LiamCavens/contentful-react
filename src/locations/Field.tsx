@@ -192,7 +192,7 @@ const fieldRenderers: {
           />
         );
       }
-      if (contentType === "poi") {
+      if (contentType === "poi" || contentType === "poiDetails") {
         return (
           <PoiEntry
             entryId={props.entity.sys.id}
@@ -206,7 +206,7 @@ const fieldRenderers: {
 
       return (
         <div>
-          <p> To Do Content Type in Field : {props.entity.sys.id}</p>
+          <p> To Do Content Type in Field : {contentType}</p>
         </div>
       );
     };

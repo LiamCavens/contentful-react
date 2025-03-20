@@ -9,7 +9,14 @@ const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
 const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
 
-const MAX_CONCURRENT_REQUESTS = 5; // Controls API request batching
+const MAX_CONCURRENT_REQUESTS = 4; // Controls API request batching
+const REQUEST_DELAY_MS = 1000; // Delay between request batches in milliseconds
+
+/**
+ * Helper function to introduce delay between operations
+ * @param ms - Milliseconds to delay
+ */
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
   const [currentEntry, setCurrentEntry] = useState<EntryProps | null>(null);
@@ -46,11 +53,17 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
 
   /**
    * Batches API requests to avoid overloading the API.
+   * Adds a delay between batches to prevent rate limiting.
    */
   const batchFetch = async (ids: string[], batchSize: number) => {
     const results: EntryProps[] = [];
 
     for (let i = 0; i < ids.length; i += batchSize) {
+      // Add delay between batches (except for the first one)
+      if (i > 0) {
+        await delay(REQUEST_DELAY_MS);
+      }
+
       const batch = ids.slice(i, i + batchSize);
       const batchResults = await Promise.all(
         batch.map(async (id) => {
@@ -66,7 +79,9 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
             );
 
             if (!response.ok) {
-              console.warn(`Failed to fetch entry ${id}: ${response.statusText}`);
+              console.warn(
+                `Failed to fetch entry ${id}: ${response.statusText}`
+              );
               return null;
             }
 
@@ -79,7 +94,9 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
       );
 
       // Append valid entries to results
-      results.push(...batchResults.filter((entry): entry is EntryProps => entry !== null));
+      results.push(
+        ...batchResults.filter((entry): entry is EntryProps => entry !== null)
+      );
     }
 
     return results;
@@ -106,8 +123,8 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
       const fetchedPlaces = await batchFetch(placeIds, MAX_CONCURRENT_REQUESTS);
 
       // Filter out invalid responses and check content type
-      const validPlaces = fetchedPlaces.filter(
-        (place) => ["place", "poi"].includes(place.sys.contentType.sys.id)
+      const validPlaces = fetchedPlaces.filter((place) =>
+        ["place", "poi"].includes(place.sys.contentType.sys.id)
       );
 
       setPlacesData(validPlaces);
