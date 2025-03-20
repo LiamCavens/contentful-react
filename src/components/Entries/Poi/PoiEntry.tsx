@@ -92,6 +92,9 @@ const PoiEntry = ({
     Math.min(startIndex + itemsPerPage, linkedItems.length)
   );
 
+  console.log('Liam: poi');
+  console.log(poi);
+
   return (
     <Flex flexDirection="column" margin="none">
       <div
@@ -140,7 +143,7 @@ const PoiEntry = ({
                     })}
                   >
                     {/*@ts-expect-error - outdated library now uses fieldStatus instead of status */}
-                    {poi?.sys?.fieldStatus["*"][locale] && (
+                    {poi?.sys?.fieldStatus?.["*"][locale] && (
                       <Badge
                         variant={
                           /*@ts-expect-error - outdated library now uses fieldStatus instead of status */

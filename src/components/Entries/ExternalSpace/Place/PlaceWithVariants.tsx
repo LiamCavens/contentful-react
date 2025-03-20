@@ -14,10 +14,14 @@ import {
   Paragraph,
   TextInput,
 } from "@contentful/f36-components";
-import { MoreHorizontalIcon as MenuIcon } from "@contentful/f36-icons";
+import {
+  MoreHorizontalIcon as MenuIcon,
+  ExternalLinkIcon,
+} from "@contentful/f36-icons";
 import { ContentfulContentModelTypes } from "../../../../ts/types/ContentfulTypes";
 import { camelCaseToCapitalizedWords } from "../../../../ts/utilities/formatStrings";
 import { createEntry } from "../../../../ts/utilities/contentful/createEntry";
+import { publishEntry } from "../../../../ts/utilities/contentful/publishEntry";
 import { css } from "emotion";
 import { useEffect, useState } from "react";
 import { EntryProps } from "contentful-management";
@@ -27,7 +31,9 @@ import getBGColor from "../../../../ts/utilities/getBGColor";
 const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
 const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
-const BATCH_SIZE = 4; // Number of requests to batch together
+const CONTENT_DELIVERY_API_TOKEN_SHARED = import.meta.env
+  .VITE_CONTENT_DELIVERY_API_TOKEN_SHARED;
+const BATCH_SIZE = 25; // Number of requests to batch together
 const BATCH_DELAY = 1000; // Delay between batches in milliseconds
 
 /**
@@ -52,13 +58,11 @@ const PlaceWithVariants = ({
   entry,
   variantIds,
   parentEntry,
-  places,
 }: {
   sdk: FieldAppSDK;
   entry: EntryProps;
   variantIds: string[];
   parentEntry: EntryProps;
-  places: EntryProps[];
 }) => {
   const [linkedVariantEntries, setLinkedVariantEntries] = useState<
     EntryProps[]
@@ -76,19 +80,18 @@ const PlaceWithVariants = ({
   const locale = sdk.locales.default;
   const contentType = entry.sys.contentType.sys
     .id as ContentfulContentModelTypes;
-  // @ts-ignore // library is outdated and status is now fieldStatus
-  const fieldStatus = entry.sys.fieldStatus["*"][locale];
-  const entryName = entry.fields?.name?.[locale];
+
+  const entryName = entry.fields.name || entry.fields.name[locale];
 
   /**
    * Fetch linked variant entries on component mount and when entry changes
    */
   useEffect(() => {
     const fetchLinkedVariants = async () => {
-      if (!entry.fields.linkedVariants?.[locale]) return;
+      if (!entry.fields.linkedVariants) return;
 
       // Get linked variant IDs
-      const linkedVariantIds = entry.fields.linkedVariants[locale].map(
+      const linkedVariantIds = entry.fields.linkedVariants.map(
         (linkedVariant: { sys: { id: string } }) => linkedVariant.sys.id
       );
 
@@ -110,10 +113,10 @@ const PlaceWithVariants = ({
           const batchPromises = batch.map(async (id) => {
             try {
               const response = await fetch(
-                `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${id}`,
+                `https://cdn.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${id}`,
                 {
                   headers: {
-                    Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+                    Authorization: `Bearer ${CONTENT_DELIVERY_API_TOKEN_SHARED}`,
                     "Content-Type": "application/json",
                   },
                 }
@@ -268,6 +271,7 @@ const PlaceWithVariants = ({
    */
   const cloneVariant = async (selectedVariant: EntryProps) => {
     try {
+      console.log(selectedVariant);
       const mutatedVariantForApp = {
         ...selectedVariant,
         fields: {
@@ -275,16 +279,22 @@ const PlaceWithVariants = ({
             [locale]: cloneName,
           },
           description: {
-            [locale]: selectedVariant.fields.description[locale],
+            [locale]:
+              selectedVariant.fields.description ||
+              selectedVariant.fields.description[locale],
           },
           ...(selectedVariant.fields.media && {
             media: {
-              [locale]: selectedVariant.fields.media[locale],
+              [locale]:
+                selectedVariant.fields.media ||
+                selectedVariant.fields.media[locale],
             },
           }),
           ...(selectedVariant.fields.migrationLocked && {
             migrationLocked: {
-              [locale]: selectedVariant.fields.migrationLocked[locale],
+              [locale]:
+                selectedVariant.fields.migrationLocked ||
+                selectedVariant.fields.migrationLocked[locale],
             },
           }),
         },
@@ -307,30 +317,44 @@ const PlaceWithVariants = ({
         },
       };
 
-      const existingLinkedVariants =
-        entry.fields.linkedVariants?.[locale] || [];
+      const existingLinkedVariants = entry.fields.linkedVariants || [];
       const updatedLinkedVariants = [
         ...existingLinkedVariants,
         newLinkedVariantReference,
       ];
 
+      const entryToUpdateResponse = await fetch(
+        `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${entry.sys.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const entryToUpdate = await entryToUpdateResponse.json();
+
       const response = await fetch(
-        `https://api.contentful.com/spaces/${entry.sys.space.sys.id}/environments/${ENVIRONMENT_ID}/entries/${entry.sys.id}`,
+        `https://api.contentful.com/spaces/${entryToUpdate.sys.space.sys.id}/environments/${ENVIRONMENT_ID}/entries/${entryToUpdate.sys.id}`,
         {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
-            "X-Contentful-Version": entry.sys.version.toString(),
-            "X-Contentful-Content-Type": entry.sys.contentType.sys.id,
+            "X-Contentful-Content-Type": String(
+              entryToUpdate.sys.contentType?.sys?.id || ""
+            ),
+            "X-Contentful-Version": entryToUpdate.sys.version,
           },
           body: JSON.stringify({
             fields: {
-              ...entry.fields,
+              ...entryToUpdate.fields,
               linkedVariants: { [locale]: updatedLinkedVariants },
             },
+            metadata: entryToUpdate.metadata,
             sys: {
-              ...entry.sys,
+              ...entryToUpdate.sys,
               updatedBy: {
                 id: sdk.user.sys.id,
                 linkType: "User",
@@ -347,14 +371,34 @@ const PlaceWithVariants = ({
         );
       }
 
-      await sdk.cma.entry.update({ entryId: entry.sys.id }, entry);
+      await sdk.cma.entry.update({ entryId: parentEntry.sys.id }, parentEntry);
+
+      const entryToUpdateResponseAgain = await fetch(
+        `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${entry.sys.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const entryToUpdateAgain = await entryToUpdateResponseAgain.json();
+
+      await publishEntry(
+        entryToUpdateAgain,
+        entryToUpdateAgain.sys.contentType.sys.id,
+        {
+          spaceId: entryToUpdateAgain.sys.space.sys.id,
+          environmentId: entryToUpdateAgain.sys.environment.sys.id,
+          accessToken: CMA_ACCESS_TOKEN,
+        }
+      );
 
       sdk.notifier.success("Cloned variant successfully!");
     } catch (error) {
       console.error("Error cloning variant:", error);
-      // sdk.notifier.error("Failed to clone variant.");
-    } finally {
-      window.location.reload();
+      sdk.notifier.error("Failed to clone variant.");
     }
   };
 
@@ -447,19 +491,19 @@ const PlaceWithVariants = ({
                   gap: "1rem",
                 })}
               >
-                {fieldStatus && (
-                  <Badge
-                    variant={
-                      fieldStatus === "published"
-                        ? "positive"
-                        : fieldStatus === "changed"
-                        ? "warning"
-                        : "negative"
-                    }
-                  >
-                    {fieldStatus}
-                  </Badge>
-                )}
+                <Badge variant="positive">Published</Badge>
+                <Button
+                  as="a"
+                  className={css({
+                    width: "100px",
+                  })}
+                  variant="secondary"
+                  href={`https://app.contentful.com/spaces/${entry.sys.space.sys.id}/environments/${entry.sys.environment.sys.id}/entries/${entry.sys.id}`}
+                  endIcon={<ExternalLinkIcon />}
+                  target="_blank"
+                >
+                  Edit
+                </Button>
                 <Menu>
                   <Menu.Trigger>
                     <IconButton
@@ -563,15 +607,12 @@ const PlaceWithVariants = ({
                         margin: "0",
                       })}
                     >
-                      {linkedVariant.fields?.name?.[locale] ||
-                        "Unnamed Variant"}
+                      {linkedVariant.fields.name || "Unnamed Variant"}
                     </Heading>
 
                     <div>
                       <Paragraph>
-                        {formatDescription(
-                          linkedVariant.fields?.description?.[locale]
-                        )}
+                        {formatDescription(linkedVariant.fields?.description)}
                       </Paragraph>
                       {variantIds.includes(linkedVariant.sys.id) && (
                         <Badge variant="positive">Active</Badge>
@@ -606,9 +647,7 @@ const PlaceWithVariants = ({
                         variant="secondary"
                         onClick={() => {
                           setShowCloneConfirm(true);
-                          setCloneName(
-                            linkedVariant.fields?.name?.[locale] || ""
-                          );
+                          setCloneName(linkedVariant.fields.name || "");
                         }}
                       >
                         Clone
@@ -645,6 +684,18 @@ const PlaceWithVariants = ({
                         will be linked to current POI
                       </Paragraph>
                     </ModalConfirm>
+                    <Button
+                      as="a"
+                      className={css({
+                        width: "100px",
+                      })}
+                      variant="secondary"
+                      href={`https://app.contentful.com/spaces/${linkedVariant.sys.space.sys.id}/environments/${linkedVariant.sys.environment.sys.id}/entries/${linkedVariant.sys.id}`}
+                      endIcon={<ExternalLinkIcon />}
+                      target="_blank"
+                    >
+                      Edit
+                    </Button>
                   </div>
                 </div>
               ))

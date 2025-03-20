@@ -1,4 +1,5 @@
 import { EntryProps } from "contentful-management";
+import { publishEntry } from "./publishEntry";
 
 /**
  * Creates and publishes an entry in the Contentful shared space
@@ -20,7 +21,7 @@ export const createEntry = async (
   try {
     // Create and publish the entry
     const entry = await createContentfulEntry(entryData, contentType, config);
-    return await publishContentfulEntry(entry, contentType, config);
+    return await publishEntry(entry, contentType, config);
   } catch (error) {
     console.error("Error in Contentful entry creation process:", error);
     return null;
@@ -58,36 +59,4 @@ async function createContentfulEntry(
   return result;
 }
 
-/**
- * Publishes an existing Contentful entry
- */
-async function publishContentfulEntry(
-  entry: any,
-  contentType: string,
-  config: { spaceId: string; environmentId: string; accessToken: string }
-) {
-  const entryId = entry.sys.id;
-  const version = entry.sys.version.toString();
-  const publishUrl = `https://api.contentful.com/spaces/${config.spaceId}/environments/${config.environmentId}/entries/${entryId}/published`;
 
-  const publishedResponse = await fetch(publishUrl, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${config.accessToken}`,
-      "X-Contentful-Version": version,
-      "X-Contentful-Content-Type": contentType,
-    },
-  });
-
-  const publishedResult = await publishedResponse.json();
-
-  if (!publishedResponse.ok) {
-    throw new Error(
-      `Failed to publish entry: ${
-        publishedResult.message || publishedResponse.statusText
-      }`
-    );
-  }
-
-  return publishedResult;
-}

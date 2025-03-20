@@ -139,7 +139,7 @@ const PlaceEntryWithAccordion = ({
     (item) => item.sys.contentType.sys.id === "place"
   );
   const poiChildren = linkedItems.filter(
-    (item) => item.sys.contentType.sys.id === "poi"
+    (item) => item.sys.contentType.sys.id === "poiDetails"
   );
 
   const hasChildren = placeChildren.length > 0;

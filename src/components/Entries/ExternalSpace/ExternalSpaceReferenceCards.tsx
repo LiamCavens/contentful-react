@@ -5,11 +5,12 @@ import { EntryProps } from "contentful-management";
 import PlaceWithVariants from "./Place/PlaceWithVariants";
 import { css } from "emotion";
 
-const EXTERNAL_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
+const SHARED_SPACE_ID = import.meta.env.VITE_SHARED_SPACE_ID;
 const ENVIRONMENT_ID = import.meta.env.VITE_SHARED_ENVIRONMENT_ID;
-const CMA_ACCESS_TOKEN = import.meta.env.VITE_CHANNEL_CMA_ACCESS_TOKEN;
+const VITE_CONTENT_DELIVERY_API_TOKEN_SHARED = import.meta.env
+  .VITE_CONTENT_DELIVERY_API_TOKEN_SHARED;
 
-const MAX_CONCURRENT_REQUESTS = 4; // Controls API request batching
+const MAX_CONCURRENT_REQUESTS = 50; // Controls API request batching
 const REQUEST_DELAY_MS = 1000; // Delay between request batches in milliseconds
 
 /**
@@ -69,10 +70,10 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
         batch.map(async (id) => {
           try {
             const response = await fetch(
-              `https://api.contentful.com/spaces/${EXTERNAL_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${id}`,
+              `https://cdn.contentful.com/spaces/${SHARED_SPACE_ID}/environments/${ENVIRONMENT_ID}/entries/${id}`,
               {
                 headers: {
-                  Authorization: `Bearer ${CMA_ACCESS_TOKEN}`,
+                  Authorization: `Bearer ${VITE_CONTENT_DELIVERY_API_TOKEN_SHARED}`,
                   "Content-Type": "application/json",
                 },
               }
@@ -127,8 +128,12 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
         ["place", "poi"].includes(place.sys.contentType.sys.id)
       );
 
+      const filteredVariantIds = fetchedPlaces
+        .filter((place) => !["place", "poi"].includes(place.sys.contentType.sys.id))
+        .map((place) => place.sys.id);
+
       setPlacesData(validPlaces);
-      setLinkedVariantIds(placeIds);
+      setLinkedVariantIds(filteredVariantIds);
     } catch (error) {
       console.error("Error fetching places data:", error);
     }
@@ -143,7 +148,6 @@ const ExternalSpaceReferenceCards = ({ sdk }: { sdk: FieldAppSDK }) => {
           entry={place}
           variantIds={linkedVariantIds}
           parentEntry={currentEntry}
-          places={placesData}
         />
       ))}
     </Flex>
